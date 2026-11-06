@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
   FileText,
   Download,
   Mail,
@@ -57,16 +57,16 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-const getBankingLabel = (company: CompanySettings | undefined | null): string => {
-  if (!company) return 'IFSC';
-  const code = company.country_id?.toUpperCase();
-  if (code === 'IN' || code === 'IND') return 'IFSC';
-  if (code === 'IE' || code === 'IRL' || code === 'GB' || code === 'GBR' || code === 'UK') return 'IBAN';
-  if (code === 'US' || code === 'USA') return 'Routing No';
-  const euCountries = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'GR', 'HU', 'IE', 'LV', 'LT', 'LU', 'MT', 'PL', 'PT', 'RO', 'SK', 'SI', 'SE', 'DE', 'FR', 'ES', 'IT', 'NL'];
-  if (code && euCountries.includes(code)) return 'IBAN';
-  return 'SWIFT/BIC';
-};
+  const getBankingLabel = (company: CompanySettings | undefined | null): string => {
+    if (!company) return 'IFSC';
+    const code = company.country_id?.toUpperCase();
+    if (code === 'IN' || code === 'IND') return 'IFSC';
+    if (code === 'IE' || code === 'IRL' || code === 'GB' || code === 'GBR' || code === 'UK') return 'IBAN';
+    if (code === 'US' || code === 'USA') return 'Routing No';
+    const euCountries = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'GR', 'HU', 'IE', 'LV', 'LT', 'LU', 'MT', 'PL', 'PT', 'RO', 'SK', 'SI', 'SE', 'DE', 'FR', 'ES', 'IT', 'NL'];
+    if (code && euCountries.includes(code)) return 'IBAN';
+    return 'SWIFT/BIC';
+  };
 
   // Mark as Paid dialog state
   const [markAsPaidDialogOpen, setMarkAsPaidDialogOpen] = useState(false);
@@ -88,8 +88,8 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   };
   const tabFromPath = (pathname: string): InvoiceTab =>
     pathname === '/admin/invoices/list' ? 'invoices' :
-    pathname === '/admin/invoices/new' ? 'create-invoice' :
-    'dashboard';
+      pathname === '/admin/invoices/new' ? 'create-invoice' :
+        'dashboard';
   const [activeTab, setActiveTab] = useState<InvoiceTab>(tabFromPath(window.location.pathname));
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -237,17 +237,17 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   // Invoice Modal Functions
   const openCreateInvoiceTab = async (preselectedCustomerId?: string) => {
     goToTab('create-invoice');
-    
+
     // Ensure all required data is loaded
     await loadData();
-    
+
     // Force reload terms templates for create invoice tab
     let defaultTermsContent = '';
     let defaultTemplateId = '';
     try {
       const templates = await invoiceService.getTermsTemplates();
       setTermsTemplates(templates);
-      
+
       // Set default terms from template
       const generalTemplate = templates.find(t => t.category === 'general' && t.is_default);
       if (generalTemplate) {
@@ -257,15 +257,15 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     } catch (error) {
       console.error('Failed to load terms templates:', error);
     }
-    
+
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30); // Default 30 days from today
-    
+
     setSelectedDefaultProduct('');
     setGlobalHsnCode(''); // Reset global HSN code
     setSelectedTermsTemplateId(defaultTemplateId); // Set default selected template
-    
+
     // Preview invoice number using the service (doesn't increment counter)
     try {
       const previewNumber = await invoiceService.previewInvoiceNumber(selectedCompany?.id);
@@ -274,7 +274,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       console.error('Failed to preview invoice number:', error);
       setGeneratedInvoiceNumber('INV-PREVIEW');
     }
-    
+
     setInvoiceFormData({
       customer_id: preselectedCustomerId || '',
       invoice_date: today,
@@ -301,7 +301,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         hsn_code: undefined
       }]
     });
-    
+
     console.log('✅ Create invoice tab initialized with:', {
       invoiceNumber: generatedInvoiceNumber,
       defaultTerms: defaultTermsContent,
@@ -341,23 +341,23 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     };
     if (currencyCode === 'EUR') {
       defaults.intl_account_name = 'Kdadks';
-      defaults.intl_iban         = 'BE93905254252767';
-      defaults.intl_swift_bic    = 'TRWIBEB1XXX';
+      defaults.intl_iban = 'BE93905254252767';
+      defaults.intl_swift_bic = 'TRWIBEB1XXX';
       defaults.intl_bank_address = 'Wise, Rue du Trône 100, 3rd floor, Brussels, 1050, Belgium';
     } else if (currencyCode === 'GBP') {
-      defaults.intl_account_name   = 'Kdadks';
-      defaults.intl_iban           = 'GB43TRWI60846460921788';
+      defaults.intl_account_name = 'Kdadks';
+      defaults.intl_iban = 'GB43TRWI60846460921788';
       defaults.intl_account_number = '60921788';
-      defaults.intl_sort_code      = '608464';
-      defaults.intl_swift_bic      = 'TRWIGB2LXXX';
-      defaults.intl_bank_address   = 'Wise Payments Limited, Worship Square, 65 Clifton Street, London, EC2A 4JE, United Kingdom';
+      defaults.intl_sort_code = '608464';
+      defaults.intl_swift_bic = 'TRWIGB2LXXX';
+      defaults.intl_bank_address = 'Wise Payments Limited, Worship Square, 65 Clifton Street, London, EC2A 4JE, United Kingdom';
     } else if (currencyCode === 'USD') {
-      defaults.intl_account_name   = 'Kdadks';
+      defaults.intl_account_name = 'Kdadks';
       defaults.intl_account_number = '218404409881';
-      defaults.intl_account_type   = 'Checking';
+      defaults.intl_account_type = 'Checking';
       defaults.intl_routing_number = '101019628';
-      defaults.intl_swift_bic      = 'TRWIUS35XXX';
-      defaults.intl_bank_address   = 'Wise US Inc, 108 W 13th St, Wilmington, DE, 19801, United States';
+      defaults.intl_swift_bic = 'TRWIUS35XXX';
+      defaults.intl_bank_address = 'Wise US Inc, 108 W 13th St, Wilmington, DE, 19801, United States';
     }
     return defaults;
   };
@@ -400,7 +400,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       }));
       return;
     }
-    
+
     setInvoiceFormData(prev => ({
       ...prev,
       [field]: value
@@ -434,7 +434,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
               description: updatedItem.description
             });
           }
-          
+
           return updatedItem;
         }
         return item;
@@ -476,7 +476,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       ...prev,
       items: [...prev.items, newItem]
     }));
-    
+
     console.log('✅ Added new line item with global product_id:', {
       productId: selectedDefaultProduct || 'None',
       hsnCode: globalHsnCode || 'None',
@@ -541,19 +541,19 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   // Convert number to words (Indian system)
   const numberToWords = (num: number): string => {
     if (num === 0) return 'Zero';
-    
+
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
     const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
+
     const convertHundreds = (n: number): string => {
       let result = '';
-      
+
       if (n >= 100) {
         result += ones[Math.floor(n / 100)] + ' Hundred ';
         n %= 100;
       }
-      
+
       if (n >= 20) {
         result += tens[Math.floor(n / 10)] + ' ';
         n %= 10;
@@ -561,11 +561,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         result += teens[n - 10] + ' ';
         return result;
       }
-      
+
       if (n > 0) {
         result += ones[n] + ' ';
       }
-      
+
       return result;
     };
 
@@ -589,7 +589,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   const formatAmountInWords = (amount: number, currencyName: string = 'Rupees'): string => {
     const integerPart = Math.floor(amount);
     const decimalPart = Math.round((amount - integerPart) * 100);
-    
+
     let result = numberToWords(integerPart).trim() + ' ' + currencyName;
     if (decimalPart > 0) {
       result += ' and ' + numberToWords(decimalPart).trim() + ' Paise';
@@ -605,49 +605,49 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     return currencyInfo.symbol + ' ' + formattedNumber;
   };
 
-   const handleGenerateDraftInvoices = async () => {
-     const confirmed = await confirm({
-       title: 'Generate Draft Invoices',
-       message: 'Generate draft invoices for all due subscriptions?',
-       confirmText: 'Generate',
-       type: 'info',
-     });
-     if (!confirmed) return;
-     startAction('Generating draft invoices…');
-     try {
-       const invoices = await invoiceService.generateDraftInvoicesFromSubscriptions();
-       showSuccess(`${invoices.length} draft invoice(s) generated successfully!`);
-       loadData();
-     } catch (err) {
-       showError(`Failed to generate draft invoices: ${err instanceof Error ? err.message : 'Unknown error'}`);
-     } finally {
-       endAction();
-     }
-   };
+  const handleGenerateDraftInvoices = async () => {
+    const confirmed = await confirm({
+      title: 'Generate Draft Invoices',
+      message: 'Generate draft invoices for all due subscriptions?',
+      confirmText: 'Generate',
+      type: 'info',
+    });
+    if (!confirmed) return;
+    startAction('Generating draft invoices…');
+    try {
+      const invoices = await invoiceService.generateDraftInvoicesFromSubscriptions();
+      showSuccess(`${invoices.length} draft invoice(s) generated successfully!`);
+      loadData();
+    } catch (err) {
+      showError(`Failed to generate draft invoices: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      endAction();
+    }
+  };
 
-   const handleSaveInvoice = async () => {
+  const handleSaveInvoice = async () => {
     try {
       setModalLoading(true);
-      
+
       // Enhanced validation for all required fields
       console.log('🔍 Starting invoice validation:', {
         customer_id: invoiceFormData.customer_id,
         invoice_date: invoiceFormData.invoice_date,
         items_count: invoiceFormData.items.length
       });
-      
+
       // Validate customer selection
       if (!invoiceFormData.customer_id || invoiceFormData.customer_id.trim() === '') {
         showError('Customer is required. Please select a customer from the dropdown.');
         return;
       }
-      
+
       // Validate invoice date
       if (!invoiceFormData.invoice_date || invoiceFormData.invoice_date.trim() === '') {
         showError('Invoice date is required. Please select an invoice date.');
         return;
       }
-      
+
       // Validate invoice date is not in the future (optional business rule)
       const invoiceDate = new Date(invoiceFormData.invoice_date);
       const today = new Date();
@@ -656,7 +656,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         showError('Invoice date cannot be in the future. Please select a valid date.');
         return;
       }
-      
+
       // Validate due date if provided
       if (invoiceFormData.due_date && invoiceFormData.due_date.trim() !== '') {
         const dueDate = new Date(invoiceFormData.due_date);
@@ -665,78 +665,78 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           return;
         }
       }
-      
+
       // Validate at least one line item exists
       if (!invoiceFormData.items || invoiceFormData.items.length === 0) {
         showError('At least one line item is required. Please add items to the invoice.');
         return;
       }
-      
+
       // Count valid items (items with any content)
       let validItemsCount = 0;
       let hasCompleteItems = false;
-      
+
       // Validate all items have required fields (skip completely empty items)
       for (let i = 0; i < invoiceFormData.items.length; i++) {
         const item = invoiceFormData.items[i];
-        
+
         // Skip validation for completely empty items (newly added but not filled)
         // An empty item has: no item_name, no description, quantity=1, unit_price=0
         // Also check if user has started filling any field
         const hasAnyContent = item.item_name || item.description || item.quantity !== 1 || item.unit_price !== 0 || (item.unit && item.unit !== 'pcs');
-        
+
         if (!hasAnyContent) {
           console.log(`⏭️ Skipping validation for completely empty item ${i + 1}:`, item);
           continue; // Skip validation for empty items
         }
-        
+
         validItemsCount++;
         console.log(`✅ Validating item ${i + 1} with content:`, item);
-        
+
         // Validate item name
         if (!item.item_name || item.item_name.trim() === '') {
           showError(`Item ${i + 1}: Item name is required. Please enter an item name.`);
           return;
         }
-        
+
         // Validate description
         if (!item.description || item.description.trim() === '') {
           showError(`Item ${i + 1}: Description is required. Please enter an item description.`);
           return;
         }
-        
+
         // Validate quantity
         if (!item.quantity || item.quantity <= 0) {
           showError(`Item ${i + 1}: Quantity must be greater than 0. Please enter a valid quantity.`);
           return;
         }
-        
+
         // Validate unit price
         if (item.unit_price < 0) {
           showError(`Item ${i + 1}: Unit price cannot be negative. Please enter a valid price.`);
           return;
         }
-        
+
         // Validate tax rate
         if (item.tax_rate < 0 || item.tax_rate > 100) {
           showError(`Item ${i + 1}: Tax rate must be between 0% and 100%. Please enter a valid tax rate.`);
           return;
         }
-        
+
         // Check if this item is complete
         if (item.item_name && item.description && item.quantity > 0 && item.unit_price >= 0) {
           hasCompleteItems = true;
         }
       }
-      
+
       // Ensure at least one complete item exists
       if (validItemsCount === 0 || !hasCompleteItems) {
         showError('At least one complete line item is required. Please fill in item name, description, quantity, and price for at least one item.');
         return;
       }
-      
+
       console.log(`✅ Validation passed with ${validItemsCount} valid items`);
-      
+
       console.log('💾 Saving invoice with validated data:', {
         totalItems: invoiceFormData.items.length,
         items: invoiceFormData.items.map((item, index) => ({
@@ -751,9 +751,9 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           hsn_code: item.hsn_code || 'No HSN'
         }))
       });
-      
+
       // Filter out any empty line items before saving, but preserve product_id even if undefined
-      const validItems = invoiceFormData.items.filter(item => 
+      const validItems = invoiceFormData.items.filter(item =>
         item.item_name && item.description && item.quantity > 0 && item.unit_price >= 0
       ).map(item => ({
         // Ensure all fields are properly preserved including optional product_id
@@ -766,12 +766,12 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         tax_rate: item.tax_rate,
         hsn_code: item.hsn_code || undefined // Explicitly handle undefined
       }));
-      
+
       if (validItems.length === 0) {
         showError('No valid line items found. Please add at least one complete item.');
         return;
       }
-      
+
       console.log('📋 Valid items after filtering and mapping:', {
         count: validItems.length,
         totalOriginal: invoiceFormData.items.length,
@@ -787,27 +787,27 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           hsn_code: item.hsn_code || 'UNDEFINED/NULL'
         }))
       });
-      
+
       console.log('💾 Saving invoice:', invoiceFormData);
-      
+
       if (invoiceModalMode === 'add' || activeTab === 'create-invoice') {
         // For new invoices, generate and reserve the final invoice number when ready to save
         let finalInvoiceNumber: string;
         let attempts = 0;
         const maxAttempts = 10; // Prevent infinite loops
-        
+
         while (attempts < maxAttempts) {
           try {
             // Generate and reserve the invoice number in the database
             finalInvoiceNumber = await invoiceService.generateInvoiceNumber(selectedCompany?.id);
             console.log(`🔢 Generated and reserved invoice number attempt ${attempts + 1}:`, finalInvoiceNumber);
-            
+
             // Check if this invoice number already exists in the database
             const existingInvoices = await invoiceService.getInvoices({ search: finalInvoiceNumber }, 1, 1);
-            const exactMatch = existingInvoices.data.find(invoice => 
+            const exactMatch = existingInvoices.data.find(invoice =>
               invoice.invoice_number === finalInvoiceNumber
             );
-            
+
             if (!exactMatch) {
               // Invoice number is unique, we can proceed
               console.log('✅ Invoice number is unique and reserved:', finalInvoiceNumber);
@@ -815,11 +815,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             } else {
               console.log('⚠️ Invoice number already exists (rare collision), generating new one:', finalInvoiceNumber);
               attempts++;
-              
+
               if (attempts >= maxAttempts) {
                 throw new Error(`Unable to generate unique invoice number after ${maxAttempts} attempts`);
               }
-              
+
               // Continue loop to generate another number
             }
           } catch (numberError) {
@@ -831,10 +831,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             // Continue loop to try again
           }
         }
-        
+
         // Update the displayed invoice number for user feedback
         setGeneratedInvoiceNumber(finalInvoiceNumber!);
-        
+
         // Create invoice with the reserved invoice number
         const finalInvoiceData = {
           ...invoiceFormData,
@@ -842,7 +842,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           // Apply INR override if toggled on for a foreign customer
           currency_code_override: useINROverride ? 'INR' : undefined
         };
-        
+
         console.log('💾 Saving invoice with data:', {
           invoiceNumber: finalInvoiceNumber!,
           customerId: finalInvoiceData.customer_id,
@@ -858,7 +858,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             hsn_code: item.hsn_code
           }))
         });
-        
+
         // Pass the invoice data and reserved invoice number to the service
         await invoiceService.createInvoice(finalInvoiceData, finalInvoiceNumber!, selectedCompany?.id);
         console.log('💾 Invoice saved successfully with final number:', finalInvoiceNumber!);
@@ -869,7 +869,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         if (selectedInvoice.status === 'draft') {
           // For draft invoices, update the existing invoice
           console.log('📝 Updating draft invoice:', selectedInvoice.invoice_number);
-          
+
           // Prepare update data with line items - using Partial<CreateInvoiceData> to match service
           const updateData: Partial<CreateInvoiceData> = {
             customer_id: invoiceFormData.customer_id,
@@ -880,19 +880,19 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             currency_code_override: useINROverride ? 'INR' : undefined,
             items: validItems // Use the filtered and validated items
           };
-          
+
           await invoiceService.updateInvoice(selectedInvoice.id, updateData);
           console.log('✅ Draft invoice updated successfully');
           showSuccess(`Draft invoice ${selectedInvoice.invoice_number} updated successfully!`);
-          
+
         } else if (selectedInvoice.status === 'sent') {
           // For sent invoices, create a new invoice (revision)
           console.log('📄 Creating new invoice revision for sent invoice:', selectedInvoice.invoice_number);
-          
+
           // Generate new invoice number for the revision
           const newInvoiceNumber = await invoiceService.generateInvoiceNumber(selectedCompany?.id);
           console.log('🔢 Generated new invoice number for revision:', newInvoiceNumber);
-          
+
           // Prepare new invoice data (service will calculate totals and set status)
           const revisionInvoiceData: CreateInvoiceData = {
             customer_id: invoiceFormData.customer_id,
@@ -912,19 +912,19 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
               hsn_code: item.hsn_code
             }))
           };
-          
+
           // Create new invoice
           await invoiceService.createInvoice(revisionInvoiceData, newInvoiceNumber, selectedCompany?.id);
           console.log('💾 New invoice revision created successfully:', newInvoiceNumber);
           showSuccess(`New invoice ${newInvoiceNumber} created as revision of ${selectedInvoice.invoice_number}!`);
-          
+
         } else {
           // For other statuses (paid, overdue, cancelled), show warning
           showWarning(`Cannot edit invoice with status: ${selectedInvoice.status}. Only draft and sent invoices can be edited.`);
           return;
         }
       }
-      
+
       closeInvoiceModal();
       await loadData(); // Refresh the data
     } catch (error) {
@@ -938,13 +938,13 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         formData: invoiceFormData,
         fullError: error
       });
-      
+
       // Provide specific, user-friendly error messages
       let errorMessage = 'Failed to save invoice due to an unexpected error.';
-      
+
       if (error instanceof Error) {
         const errorMsg = error.message.toLowerCase();
-        
+
         if (errorMsg.includes('duplicate key') || errorMsg.includes('already exists')) {
           errorMessage = 'This invoice number already exists. Please try again with a different invoice number.';
         } else if (errorMsg.includes('foreign key') || errorMsg.includes('invalid customer')) {
@@ -966,7 +966,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           errorMessage = `Unable to save invoice: ${error.message}. Please check your data and try again.`;
         }
       }
-      
+
       showError(errorMessage);
     } finally {
       setModalLoading(false);
@@ -975,14 +975,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
   // Product Selection Functions
   const handleDefaultProductChange = (productId: string) => {
-    console.log('🛒 Global product selection changed:', { 
-      productId, 
+    console.log('🛒 Global product selection changed:', {
+      productId,
       availableProducts: products.length,
       previousSelection: selectedDefaultProduct,
       previousGlobalHsn: globalHsnCode
     });
     setSelectedDefaultProduct(productId);
-    
+
     if (productId) {
       const product = products.find(p => p.id === productId);
       console.log('📦 Selected global product details:', {
@@ -994,26 +994,26 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         // Set global HSN code for all line items
         const hsnCode = product.hsn_code || '';
         setGlobalHsnCode(hsnCode);
-        
+
         console.log('🔧 Setting global values:', {
           productId: product.id,
           hsnCode,
           willApplyToItems: invoiceFormData.items.length
         });
-        
+
         // Apply product_id and HSN code to ALL line items (like a global setting)
         const updatedItems = invoiceFormData.items.map(item => ({
           ...item,
           product_id: product.id, // Apply same product_id to all line items
           hsn_code: hsnCode       // Apply same HSN code to all line items
         }));
-        
+
         console.log('✅ Applied global product_id and HSN code to all line items:', {
           productId: product.id,
           hsnCode,
           totalItems: updatedItems.length
         });
-        
+
         setInvoiceFormData(prev => ({
           ...prev,
           items: updatedItems
@@ -1022,16 +1022,16 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     } else {
       // Clear global HSN code and product_id when no product is selected
       setGlobalHsnCode('');
-      
+
       // Remove product_id from all line items
       const updatedItems = invoiceFormData.items.map(item => ({
         ...item,
         product_id: undefined,
         hsn_code: undefined
       }));
-      
+
       console.log('🧹 Cleared global product_id and HSN code from all line items');
-      
+
       setInvoiceFormData(prev => ({
         ...prev,
         items: updatedItems
@@ -1063,7 +1063,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       confirmText: 'Delete',
       type: 'danger'
     });
-    
+
     if (confirmed) {
       startAction('Deleting invoice…');
       try {
@@ -1125,7 +1125,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         setGeneratedInvoiceNumber(fullInvoice.invoice_number);
         // Restore INR override: invoice was billed in INR but customer's native currency is foreign
         setUseINROverride(filledInvoice.currency_code === 'INR' && viewCurrency !== 'INR');
-        
+
         // Only show preview modal for viewing - no edit modal
         setInvoiceModalMode('view');
         setShowInvoicePreview(true);
@@ -1144,10 +1144,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // Load full invoice details
       const fullInvoice = await invoiceService.getInvoiceById(invoice.id);
       console.log('📄 Full invoice loaded:', fullInvoice);
-      
+
       if (fullInvoice) {
         setSelectedInvoice(fullInvoice);
-        
+
         // Map invoice items to form data format
         const mappedItems = fullInvoice.invoice_items?.map(item => ({
           product_id: item.product_id,
@@ -1159,11 +1159,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           tax_rate: item.tax_rate,
           hsn_code: item.hsn_code
         })) || [];
-        
+
         console.log('🛒 Mapped items for editing:', mappedItems);
         console.log('📊 Invoice status:', fullInvoice.status);
         console.log('📊 Original invoice_items:', fullInvoice.invoice_items);
-        
+
         // Ensure we have at least one item for editing
         const itemsForForm = mappedItems.length > 0 ? mappedItems : [{
           product_id: undefined,
@@ -1175,9 +1175,9 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           tax_rate: 18,
           hsn_code: undefined
         }];
-        
+
         console.log('📝 Final items for form:', itemsForForm);
-        
+
         // Backfill intl_* defaults for non-INR currencies so admin can edit the
         // banking section pre-populated for legacy invoices missing these fields.
         const editCustomer = customers.find(c => c.id === fullInvoice.customer_id);
@@ -1212,38 +1212,38 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           ...intlSource,
           items: itemsForForm
         };
-        
+
         console.log('📝 Setting form data for editing:', formData);
         setInvoiceFormData(formData);
         setGeneratedInvoiceNumber(fullInvoice.invoice_number);
         // Restore INR override: invoice was billed in INR but customer's native currency is foreign
         setUseINROverride(fullInvoice.currency_code === 'INR' && editCurrency !== 'INR');
-        
+
         // Set default product and HSN code for new items based on existing items
         if (itemsForForm.length > 0) {
           // Check if all items have the same product_id
           const firstProductId = itemsForForm[0].product_id;
           const allSameProduct = itemsForForm.every(item => item.product_id === firstProductId);
-          
+
           if (allSameProduct && firstProductId) {
             console.log('📦 Setting default product for edit mode:', firstProductId);
             setSelectedDefaultProduct(firstProductId);
           }
-          
+
           // Check if all items have the same HSN code
           const firstHsnCode = itemsForForm[0].hsn_code;
           const allSameHsn = itemsForForm.every(item => item.hsn_code === firstHsnCode);
-          
+
           if (allSameHsn && firstHsnCode) {
             console.log('🏷️ Setting global HSN code for edit mode:', firstHsnCode);
             setGlobalHsnCode(firstHsnCode);
           }
         }
-        
+
         // Open edit modal instead of switching tabs
         setInvoiceModalMode('edit');
         setShowInvoiceModal(true);
-        
+
         // Ensure customers, products, and terms are loaded for editing
         await ensureDataLoadedForEdit();
       }
@@ -1262,7 +1262,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           products.length === 0 ? invoiceService.getProducts({}, 1, 1000) : Promise.resolve({ data: products }),
           termsTemplates.length === 0 ? invoiceService.getTermsTemplates() : Promise.resolve(termsTemplates)
         ]);
-        
+
         if (customers.length === 0) setCustomers(customersData.data || []);
         if (products.length === 0) setProducts(productsData.data || []);
         if (termsTemplates.length === 0) setTermsTemplates(termsData || []);
@@ -1331,7 +1331,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           return;
         }
       }
-      
+
       const customer = currentCustomers.find(c => c.id === fullInvoice.customer_id);
       if (!customer) {
         showError('Customer details not found for PDF generation');
@@ -1350,10 +1350,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       const currencyInfo = (fullInvoice.currency_code === 'INR' && nativeCurrencyInfo.code !== 'INR')
         ? { symbol: '₹', code: 'INR', name: 'Rupees' }
         : nativeCurrencyInfo;
-      
+
       // Get dynamic tax label based on customer's country
       const taxLabel = getTaxLabel(selectedCustomer);
-      
+
       console.log('💰 Currency info for PDF generation:', {
         customer: selectedCustomer ? {
           id: selectedCustomer.id,
@@ -1373,20 +1373,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         format: 'a4'
         // Remove ALL optional configuration that might cause issues
       });
-      
+
       // Use ONLY the most basic font without any variations that might trigger Unicode
       downloadPdf.setFont('helvetica');
-      
+
       // Get PDF dimensions for branding
       const dimensions = PDFBrandingUtils.getStandardDimensions();
-      
+
       // Apply branding images (header, footer, logo)
       const { contentStartY, contentEndY } = await PDFBrandingUtils.applyBranding(
-        downloadPdf, 
-        company, 
+        downloadPdf,
+        company,
         dimensions
       );
-      
+
       // Create branded header section
       let yPos = PDFBrandingUtils.createBrandedHeader(
         downloadPdf,
@@ -1397,79 +1397,79 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         dimensions,
         contentStartY
       );
-      
+
       // Extract dimensions for use throughout the function
       const leftMargin = dimensions.leftMargin;
       const rightMargin = dimensions.rightMargin;
-      
+
       // Company and Customer Information Section - Two columns with aligned starting positions
       downloadPdf.setTextColor(0, 0, 0);
-      
+
       // Remember starting position for both columns
       const fromToStartY = yPos;
       let fromYPos = fromToStartY;
       let billToYPos = fromToStartY;
       const billToX = 110;
-      
+
       // FROM Section (Left Column)
       downloadPdf.setFontSize(9);
       downloadPdf.setFont('helvetica', 'bold');
       downloadPdf.text('From:', leftMargin, fromYPos);
-      
+
       fromYPos += 5;
       downloadPdf.setFontSize(11);
       downloadPdf.setFont('helvetica', 'bold');
       const companyNameLines = downloadPdf.splitTextToSize(company.company_name, 85);
       downloadPdf.text(companyNameLines, leftMargin, fromYPos);
       fromYPos += companyNameLines.length * 4.5;
-      
+
       downloadPdf.setFontSize(8);
       downloadPdf.setFont('helvetica', 'normal');
       downloadPdf.setTextColor(60, 60, 60);
-      
+
       if (company.legal_name && company.legal_name !== company.company_name) {
         const legalNameLines = downloadPdf.splitTextToSize(company.legal_name, 85);
         downloadPdf.text(legalNameLines, leftMargin, fromYPos);
         fromYPos += legalNameLines.length * 4;
       }
-      
+
       if (company.address_line1) {
         const address1Lines = downloadPdf.splitTextToSize(company.address_line1, 85);
         downloadPdf.text(address1Lines, leftMargin, fromYPos);
         fromYPos += address1Lines.length * 4;
       }
-      
+
       if (company.address_line2) {
         const address2Lines = downloadPdf.splitTextToSize(company.address_line2, 85);
         downloadPdf.text(address2Lines, leftMargin, fromYPos);
         fromYPos += address2Lines.length * 4;
       }
-      
+
       const companyLocation = [company.city, company.state, company.postal_code].filter(Boolean).join(', ');
       if (companyLocation) {
         const locationLines = downloadPdf.splitTextToSize(companyLocation, 85);
         downloadPdf.text(locationLines, leftMargin, fromYPos);
         fromYPos += locationLines.length * 4;
       }
-      
+
       if (company.email) {
         const emailLines = downloadPdf.splitTextToSize('Email: ' + String(company.email), 85);
         downloadPdf.text(emailLines, leftMargin, fromYPos);
         fromYPos += emailLines.length * 4;
       }
-      
+
       if (company.phone) {
         const phoneLines = downloadPdf.splitTextToSize('Phone: ' + String(company.phone), 85);
         downloadPdf.text(phoneLines, leftMargin, fromYPos);
         fromYPos += phoneLines.length * 4;
       }
-      
+
       if (company.website) {
         const websiteLines = downloadPdf.splitTextToSize('Website: ' + String(company.website), 85);
         downloadPdf.text(websiteLines, leftMargin, fromYPos);
         fromYPos += websiteLines.length * 4;
       }
-      
+
       const taxFields = getCompanyTaxFields(company.country?.code);
       taxFields.fields.forEach((field) => {
         const value = company[field.key as keyof CompanySettings] as string | undefined;
@@ -1479,21 +1479,21 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           fromYPos += fieldLines.length * 4;
         }
       });
-      
+
       if (company.pan && !taxFields.fields.some(f => f.key === 'pan')) {
         const panLabel = (company.country?.code === 'IN' || company.country?.code === 'IND') ? 'PAN' : 'Tax ID';
         const panLines = downloadPdf.splitTextToSize(`${panLabel}: ` + String(company.pan), 85);
         downloadPdf.text(panLines, leftMargin, fromYPos);
         fromYPos += panLines.length * 4;
       }
-      
+
       // BILL TO Section (Right Column) - aligned with FROM section
       const billToMaxWidth = 85;
       downloadPdf.setTextColor(0, 0, 0);
       downloadPdf.setFontSize(9);
       downloadPdf.setFont('helvetica', 'bold');
       downloadPdf.text('Bill To:', billToX, billToYPos);
-      
+
       billToYPos += 5;
       downloadPdf.setFontSize(11);
       downloadPdf.setFont('helvetica', 'bold');
@@ -1502,48 +1502,48 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       const customerNameLines = downloadPdf.splitTextToSize(customerName, billToMaxWidth);
       downloadPdf.text(customerNameLines, billToX, billToYPos);
       billToYPos += customerNameLines.length * 4.5;
-      
+
       downloadPdf.setFontSize(8);
       downloadPdf.setFont('helvetica', 'normal');
       downloadPdf.setTextColor(60, 60, 60);
-      
+
       if (customer.contact_person && customer.company_name) {
         const attnLines = downloadPdf.splitTextToSize('Attn: ' + String(customer.contact_person), billToMaxWidth);
         downloadPdf.text(attnLines, billToX, billToYPos);
         billToYPos += attnLines.length * 4;
       }
-      
+
       if (customer.address_line1) {
         const address1Lines = downloadPdf.splitTextToSize(customer.address_line1, billToMaxWidth);
         downloadPdf.text(address1Lines, billToX, billToYPos);
         billToYPos += address1Lines.length * 4;
       }
-      
+
       if (customer.address_line2) {
         const address2Lines = downloadPdf.splitTextToSize(customer.address_line2, billToMaxWidth);
         downloadPdf.text(address2Lines, billToX, billToYPos);
         billToYPos += address2Lines.length * 4;
       }
-      
+
       const customerLocation = [customer.city, customer.state, customer.postal_code].filter(Boolean).join(', ');
       if (customerLocation) {
         const locationLines = downloadPdf.splitTextToSize(customerLocation, billToMaxWidth);
         downloadPdf.text(locationLines, billToX, billToYPos);
         billToYPos += locationLines.length * 4;
       }
-      
+
       if (customer.email) {
         const emailLines = downloadPdf.splitTextToSize('Email: ' + String(customer.email), billToMaxWidth);
         downloadPdf.text(emailLines, billToX, billToYPos);
         billToYPos += emailLines.length * 4;
       }
-      
+
       if (customer.phone) {
         const phoneLines = downloadPdf.splitTextToSize('Phone: ' + String(customer.phone), billToMaxWidth);
         downloadPdf.text(phoneLines, billToX, billToYPos);
         billToYPos += phoneLines.length * 4;
       }
-      
+
       if (customer.gstin) {
         const taxRegLabel = getTaxRegistrationLabel(customer);
         const taxRegLines = downloadPdf.splitTextToSize(`${taxRegLabel}: ` + String(customer.gstin), billToMaxWidth);
@@ -1557,7 +1557,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         downloadPdf.text(panLines, billToX, billToYPos);
         billToYPos += panLines.length * 4;
       }
-      
+
       // Payment Status Badge - compact and professional
       const statusX = billToX;
       billToYPos += 5;
@@ -1633,7 +1633,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // Professional Items Table
       downloadPdf.setFillColor(245, 247, 250);
       downloadPdf.rect(leftMargin, yPos, 180, 8, 'F');
-      
+
       downloadPdf.setTextColor(37, 99, 235);
       downloadPdf.setFontSize(8);
       downloadPdf.setFont('helvetica', 'bold');
@@ -1642,20 +1642,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       downloadPdf.text('Rate', leftMargin + 120, yPos + 5, { align: 'center' });
       downloadPdf.text(`${taxLabel}%`, leftMargin + 145, yPos + 5, { align: 'center' });
       downloadPdf.text('Amount', leftMargin + 175, yPos + 5, { align: 'right' });
-      
+
       yPos += 8;
-      
+
       // Table border
       downloadPdf.setDrawColor(220, 220, 220);
       downloadPdf.setLineWidth(0.1);
-      
+
       // Items with better spacing and typography
       downloadPdf.setTextColor(0, 0, 0);
       downloadPdf.setFont('helvetica', 'normal');
-      
+
       // Get currency symbol dynamically from customer's country - with safety checks
       let safeCurrencySymbol = 'Rs.'; // Default safe ASCII fallback
-      
+
       // Safely extract currency symbol and convert to ASCII-safe version
       if (currencyInfo && currencyInfo.code) {
         const currencyCode = currencyInfo.code.toUpperCase();
@@ -1676,14 +1676,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             safeCurrencySymbol = currencyCode || 'Rs.';
         }
       }
-      
+
       console.log('� Final currency symbol for PDF:', {
         customerCountry: selectedCustomer?.country_id || 'Unknown',
         currencySymbol: safeCurrencySymbol,
         currencyCode: currencyInfo?.code || 'Unknown',
         currencyName: currencyInfo?.name || 'Unknown'
       });
-      
+
       // Helper function to format numbers without Unicode issues - alternative approach
       const formatCleanNumber = (num: number): string => {
         // Use basic string operations to avoid any Unicode formatting issues
@@ -1692,13 +1692,13 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         const decimalStr = decimal.toString().padStart(2, '0');
         return wholeNumber.toString() + '.' + decimalStr;
       };
-      
+
       // Helper function to format currency amounts with safe symbols
       const formatCurrencyForPdf = (amount: number): string => {
         const cleanAmount = formatCleanNumber(amount);
         return safeCurrencySymbol + ' ' + cleanAmount;
       };
-      
+
       // Debug: Test number formatting
       console.log('🧪 Number formatting test with Times font:', {
         testAmount: 14130,
@@ -1707,24 +1707,24 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         basicString: '14130.00',
         directCurrency: safeCurrencySymbol + ' 14130.00'
       });
-      
+
       // Alternative simple format function for testing
       const formatSimple = (num: number): string => {
         return num.toString() + '.00';
       };
-      
+
       console.log('🔧 Simple format test:', {
         simple14130: formatSimple(14130),
         basicConcat: '14130' + '.' + '00'
       });
-      
+
       // Debug: Currency symbol in PDF generation
       console.log('📄 PDF currency formatting test:', {
         testAmount: 15000.00,
         currencySymbol: safeCurrencySymbol,
         formattedPrice: safeCurrencySymbol + ' ' + '15000.00'
       });
-      
+
       if (fullInvoice.invoice_items && fullInvoice.invoice_items.length > 0) {
         fullInvoice.invoice_items.forEach((item, index) => {
           // Calculate based on item type
@@ -1737,22 +1737,22 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           }
           const itemTax = itemSubtotal * item.tax_rate / 100;
           const itemTotal = itemSubtotal + itemTax;
-          
+
           // Calculate row height based on content
           let rowHeight = 12;
           if (item.description || item.hsn_code) {
             rowHeight = 18;
           }
-          
+
           // Check for page break
           if (yPos + rowHeight > 240) {
             downloadPdf.addPage();
             yPos = 20;
-            
+
             // Repeat header
             downloadPdf.setFillColor(245, 247, 250);
             downloadPdf.rect(leftMargin, yPos, 180, 8, 'F');
-            
+
             downloadPdf.setTextColor(37, 99, 235);
             downloadPdf.setFontSize(8);
             downloadPdf.setFont('helvetica', 'bold');
@@ -1761,32 +1761,32 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             downloadPdf.text('Rate', leftMargin + 120, yPos + 5, { align: 'center' });
             downloadPdf.text(`${taxLabel}%`, leftMargin + 145, yPos + 5, { align: 'center' });
             downloadPdf.text('Amount', leftMargin + 175, yPos + 5, { align: 'right' });
-            
+
             yPos += 8;
             downloadPdf.setTextColor(0, 0, 0);
             downloadPdf.setFont('helvetica', 'normal');
           }
-          
+
           // Subtle row separator
           if (index > 0) {
             downloadPdf.setDrawColor(240, 240, 240);
             downloadPdf.line(leftMargin, yPos, leftMargin + 180, yPos);
           }
-          
+
           yPos += 3;
-          
+
           // Calculate proper row height based on content
           const itemText = item.item_name + (item.description ? ` - ${item.description}` : '');
           const itemLines = downloadPdf.splitTextToSize(itemText, 80); // Slightly reduce width for HSN code space
           const hasHsnCode = item.hsn_code ? true : false;
           const itemRowHeight = Math.max(itemLines.length * 3 + (hasHsnCode ? 6 : 3), 12); // Dynamic height
-          
+
           // Item name with description - positioned at top of row
           downloadPdf.setFontSize(8);
           downloadPdf.setFont('helvetica', 'bold');
           downloadPdf.setTextColor(0, 0, 0);
           downloadPdf.text(itemLines, leftMargin + 2, yPos + 3);
-          
+
           // Classification Code - positioned below description with proper spacing
           if (item.hsn_code) {
             const hsnYPos = yPos + 3 + (itemLines.length * 3) + 1; // Position below description
@@ -1797,21 +1797,21 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             const shortLabel = classificationLabel === 'HSN Code' ? 'HSN' : 'Code';
             downloadPdf.text(`${shortLabel}: ${item.hsn_code}`, leftMargin + 2, hsnYPos);
           }
-          
+
           // Position numbers at the top baseline, same as the first line of item text
           const numbersYPos = yPos + 3; // Same baseline as item text for proper alignment
           downloadPdf.setTextColor(0, 0, 0);
           downloadPdf.setFontSize(8);
           downloadPdf.setFont('helvetica', 'normal');
-          
+
           // INDIAN CURRENCY FORMATTING - Lakhs/Crores system with currency symbol
-          
+
           // SAFE INDIAN CURRENCY FORMATTING - No Unicode issues
           const formatIndianNumber = (amount: number): string => {
             const amountStr = amount.toString();
             let wholePart: string;
             let decimalPart: string;
-            
+
             if (!amountStr.includes('.')) {
               wholePart = amountStr;
               decimalPart = '00';
@@ -1825,11 +1825,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                 decimalPart = decimalPart.substring(0, 2);
               }
             }
-            
+
             // Add Indian comma formatting (lakhs/crores)
             let formattedWhole = '';
             const wholePartReversed = wholePart.split('').reverse().join('');
-            
+
             for (let i = 0; i < wholePartReversed.length; i++) {
               if (i === 3) {
                 formattedWhole = ',' + formattedWhole;
@@ -1838,19 +1838,19 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
               }
               formattedWhole = wholePartReversed[i] + formattedWhole;
             }
-            
+
             return formattedWhole + '.' + decimalPart;
           };
-          
+
           const qtyText = item.quantity.toString();
           const priceText = formatIndianNumber(item.unit_price);
           const taxText = item.tax_rate.toString() + '%';
           const totalText = formatIndianNumber(itemTotal);
-          
+
           // Test with even simpler strings
           const testPriceText = '15000.00';
           const testTotalText = '17700.00';
-          
+
           // Log everything for debugging
           console.log('� PDF DEBUG - Multiple formats:', {
             qty: qtyText,
@@ -1863,20 +1863,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             originalAmount: item.unit_price,
             calculatedCents: Math.round(item.unit_price * 100)
           });
-          
+
           downloadPdf.text(qtyText, leftMargin + 95, numbersYPos, { align: 'center' });
-          
+
           // Safe currency format - concatenate symbol with formatted number
           const priceWithCurrency = safeCurrencySymbol + ' ' + priceText;
           downloadPdf.text(priceWithCurrency, leftMargin + 120, numbersYPos, { align: 'center' });
-          
+
           downloadPdf.text(taxText, leftMargin + 145, numbersYPos, { align: 'center' });
           downloadPdf.setFont('helvetica', 'bold');
-          
+
           // Safe currency format for total
           const totalWithCurrency = safeCurrencySymbol + ' ' + totalText;
           downloadPdf.text(totalWithCurrency, leftMargin + 175, numbersYPos, { align: 'right' });
-          
+
           yPos += itemRowHeight;
         });
       } else {
@@ -1885,14 +1885,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         downloadPdf.text('No items found', leftMargin + 90, yPos + 10, { align: 'center' });
         yPos += 20;
       }
-      
+
       // Table bottom border
       downloadPdf.setDrawColor(200, 200, 200);
       downloadPdf.setLineWidth(0.3);
       downloadPdf.line(leftMargin, yPos, leftMargin + 180, yPos);
-      
+
       yPos += 10;
-      
+
       // Professional Totals Section - aligned with table boundary
       const tableWidth = 180; // Same as table width
       const totalsWidth = 60; // Slightly wider for better formatting
@@ -1913,17 +1913,17 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       downloadPdf.setDrawColor(225, 229, 235);
       downloadPdf.setLineWidth(0.2);
       downloadPdf.rect(totalsStartX, yPos - 3, totalsWidth, totalsBoxHeight);
-      
+
       downloadPdf.setTextColor(60, 60, 60);
       downloadPdf.setFontSize(8);
       downloadPdf.setFont('helvetica', 'normal');
-      
+
       // SAFE INDIAN NUMBER FORMATTING - No currency symbol concatenation
       const formatIndianNumber = (amount: number): string => {
         const amountStr = amount.toString();
         let wholePart: string;
         let decimalPart: string;
-        
+
         if (!amountStr.includes('.')) {
           wholePart = amountStr;
           decimalPart = '00';
@@ -1937,11 +1937,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             decimalPart = decimalPart.substring(0, 2);
           }
         }
-        
+
         // Add Indian comma formatting (lakhs/crores)
         let formattedWhole = '';
         const wholePartReversed = wholePart.split('').reverse().join('');
-        
+
         for (let i = 0; i < wholePartReversed.length; i++) {
           if (i === 3) {
             formattedWhole = ',' + formattedWhole;
@@ -1950,15 +1950,15 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           }
           formattedWhole = wholePartReversed[i] + formattedWhole;
         }
-        
+
         return formattedWhole + '.' + decimalPart;
       };
-      
+
       // Format the totals with Indian number formatting (no currency concatenation)
       const subtotalText = formatIndianNumber(subtotal);
-      const taxAmountText = formatIndianNumber(totalTax);  
+      const taxAmountText = formatIndianNumber(totalTax);
       const finalTotalText = formatIndianNumber(total);
-      
+
       // Subtotal - safe currency concatenation
       downloadPdf.text('Subtotal:', totalsStartX + 3, yPos + 2);
       downloadPdf.setFont('helvetica', 'bold');
@@ -1988,13 +1988,13 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       downloadPdf.setFont('helvetica', 'bold');
       const taxWithCurrency = safeCurrencySymbol + ' ' + taxAmountText;
       downloadPdf.text(taxWithCurrency, totalsStartX + totalsWidth - 3, yPos + 2, { align: 'right' });
-      
+
       // Total line - elegant
       yPos += 6;
       downloadPdf.setDrawColor(37, 99, 235);
       downloadPdf.setLineWidth(0.3);
       downloadPdf.line(totalsStartX + 3, yPos, totalsStartX + totalsWidth - 3, yPos);
-      
+
       yPos += 6;
       downloadPdf.setFontSize(9);
       downloadPdf.setFont('helvetica', 'bold');
@@ -2013,22 +2013,22 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // }
 
       yPos += 8;
-      
+
       // Amount in Words - positioned directly below totals
       const amountInWords = formatAmountInWords(total, currencyInfo.name);
-      
+
       downloadPdf.setTextColor(37, 99, 235);
       downloadPdf.setFontSize(9);
       downloadPdf.setFont('helvetica', 'bold');
       downloadPdf.text('Amount in Words', totalsStartX, yPos);
-      
+
       yPos += 5;
       downloadPdf.setFontSize(7);
       downloadPdf.setFont('helvetica', 'italic');
       downloadPdf.setTextColor(60, 60, 60);
       const amountLines = downloadPdf.splitTextToSize(amountInWords, totalsWidth);
       downloadPdf.text(amountLines, totalsStartX, yPos);
-      
+
       yPos += amountLines.length * 3 + 8;
 
       // Smart layout: Banking details and Notes positioning
@@ -2106,12 +2106,12 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         });
         return startY - 2 + intlBoxHeight;
       };
-      
+
       // If we have banking details but no notes, position banking details beside totals
       if ((bankingDetailsAvailable || intlBankingAvailable) && !notesAvailable) {
         // Position banking details to the left of totals at the same height
         const bankingStartY = totalsStartX > 100 ? (yPos - amountLines.length * 3 - 8 - totalsBoxHeight) : yPos; // Align with totals if space allows
-        
+
         downloadPdf.setTextColor(37, 99, 235);
         downloadPdf.setFontSize(9);
         downloadPdf.setFont('helvetica', 'bold');
@@ -2121,164 +2121,164 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           const intlBoxBottomY = renderIntlBankingBox(leftSectionStart, bankingStartY + 5, 100);
           yPos = Math.max(yPos, intlBoxBottomY + 5);
         } else {
-        const bankingYPos = bankingStartY + 5;
-        downloadPdf.setFillColor(248, 250, 252);
-        let bankFieldCount = 0;
-        if (company.bank_name) bankFieldCount++;
-        if (company.account_number) bankFieldCount++;
-        if (isIndianCompany && company.ifsc_code) bankFieldCount++;
-        if (!isIndianCompany && company.iban) bankFieldCount++;
-        if (!isIndianCompany && company.swift_bic) bankFieldCount++;
-        const bankingBoxHeight = 4 + bankFieldCount * 4;
-        const leftColWidth = 85;
-        downloadPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight, 'F');
-        downloadPdf.setDrawColor(225, 229, 235);
-        downloadPdf.setLineWidth(0.2);
-        downloadPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight);
-        
-        downloadPdf.setFontSize(7);
-        downloadPdf.setTextColor(60, 60, 60);
-        
-        let bankingContentY = bankingYPos + 2;
-        
-        if (company.bank_name) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (company.account_number) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (isIndianCompany && company.ifsc_code) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.iban) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.swift_bic) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
-        }
-        
-        // QR code directly below banking box (side-by-side layout)
-        const bankBoxBottomY1 = bankingYPos - 2 + bankingBoxHeight + 5;
-        const dlQrData1 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
-        if (dlQrData1) {
-          const qrPdfWidth = 50;
-          const qrPdfHeight = qrPdfWidth * (dlQrData1.height / dlQrData1.width);
-          downloadPdf.addImage(dlQrData1.dataUrl, 'JPEG', leftSectionStart, bankBoxBottomY1, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
-          downloadPdf.setFontSize(6);
-          downloadPdf.setTextColor(100, 100, 100);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, bankBoxBottomY1 + qrPdfHeight + 2, { align: 'center' });
-          yPos = Math.max(yPos, bankBoxBottomY1 + qrPdfHeight + 10);
-        } else {
-          yPos = Math.max(yPos, bankBoxBottomY1);
-        }
+          const bankingYPos = bankingStartY + 5;
+          downloadPdf.setFillColor(248, 250, 252);
+          let bankFieldCount = 0;
+          if (company.bank_name) bankFieldCount++;
+          if (company.account_number) bankFieldCount++;
+          if (isIndianCompany && company.ifsc_code) bankFieldCount++;
+          if (!isIndianCompany && company.iban) bankFieldCount++;
+          if (!isIndianCompany && company.swift_bic) bankFieldCount++;
+          const bankingBoxHeight = 4 + bankFieldCount * 4;
+          const leftColWidth = 85;
+          downloadPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight, 'F');
+          downloadPdf.setDrawColor(225, 229, 235);
+          downloadPdf.setLineWidth(0.2);
+          downloadPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight);
+
+          downloadPdf.setFontSize(7);
+          downloadPdf.setTextColor(60, 60, 60);
+
+          let bankingContentY = bankingYPos + 2;
+
+          if (company.bank_name) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (company.account_number) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (isIndianCompany && company.ifsc_code) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.iban) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.swift_bic) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
+          }
+
+          // QR code directly below banking box (side-by-side layout)
+          const bankBoxBottomY1 = bankingYPos - 2 + bankingBoxHeight + 5;
+          const dlQrData1 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
+          if (dlQrData1) {
+            const qrPdfWidth = 50;
+            const qrPdfHeight = qrPdfWidth * (dlQrData1.height / dlQrData1.width);
+            downloadPdf.addImage(dlQrData1.dataUrl, 'JPEG', leftSectionStart, bankBoxBottomY1, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
+            downloadPdf.setFontSize(6);
+            downloadPdf.setTextColor(100, 100, 100);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, bankBoxBottomY1 + qrPdfHeight + 2, { align: 'center' });
+            yPos = Math.max(yPos, bankBoxBottomY1 + qrPdfHeight + 10);
+          } else {
+            yPos = Math.max(yPos, bankBoxBottomY1);
+          }
         } // end Indian banking (side-by-side)
-        
+
       } else if (bankingDetailsAvailable || intlBankingAvailable) {
         // Default layout: Banking details below totals (when notes are present)
         downloadPdf.setTextColor(37, 99, 235);
         downloadPdf.setFontSize(9);
         downloadPdf.setFont('helvetica', 'bold');
         downloadPdf.text('Banking Details', leftSectionStart, yPos);
-        
+
         yPos += 5;
 
         if (intlBankingAvailable) {
           const intlBoxBottomY = renderIntlBankingBox(leftSectionStart, yPos, 100);
           yPos = intlBoxBottomY + 5;
         } else {
-        downloadPdf.setFillColor(248, 250, 252);
-        let bankFieldCount = 0;
-        if (company.bank_name) bankFieldCount++;
-        if (company.account_number) bankFieldCount++;
-        if (isIndianCompany && company.ifsc_code) bankFieldCount++;
-        if (!isIndianCompany && company.iban) bankFieldCount++;
-        if (!isIndianCompany && company.swift_bic) bankFieldCount++;
-        const bankingBoxHeight = 4 + bankFieldCount * 4;
-        const leftColWidth = 85;
-        downloadPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight, 'F');
-        downloadPdf.setDrawColor(225, 229, 235);
-        downloadPdf.setLineWidth(0.2);
-        downloadPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight);
-        
-        downloadPdf.setFontSize(7);
-        downloadPdf.setTextColor(60, 60, 60);
-        
-        let bankingYPos = yPos + 2;
-        
-        if (company.bank_name) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('Bank:', leftSectionStart + 2, bankingYPos);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.bank_name, leftSectionStart + 15, bankingYPos);
-          bankingYPos += 4;
-        }
-        
-        if (company.account_number) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('A/C:', leftSectionStart + 2, bankingYPos);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.account_number, leftSectionStart + 15, bankingYPos);
-          bankingYPos += 4;
-        }
-        
-        if (isIndianCompany && company.ifsc_code) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingYPos);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.ifsc_code, leftSectionStart + 15, bankingYPos);
-          bankingYPos += 4;
-        }
-        if (!isIndianCompany && company.iban) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('IBAN:', leftSectionStart + 2, bankingYPos);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.iban, leftSectionStart + 15, bankingYPos);
-          bankingYPos += 4;
-        }
-        if (!isIndianCompany && company.swift_bic) {
-          downloadPdf.setFont('helvetica', 'bold');
-          downloadPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingYPos);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text(company.swift_bic, leftSectionStart + 22, bankingYPos);
-        }
-        
-        // QR code directly below banking box (stacked layout)
-        const bankBoxBottomY2 = yPos - 2 + bankingBoxHeight + 5;
-        const dlQrData2 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
-        if (dlQrData2) {
-          const qrPdfWidth = 50;
-          const qrPdfHeight = qrPdfWidth * (dlQrData2.height / dlQrData2.width);
-          downloadPdf.addImage(dlQrData2.dataUrl, 'JPEG', leftSectionStart, bankBoxBottomY2, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
-          downloadPdf.setFontSize(6);
-          downloadPdf.setTextColor(100, 100, 100);
-          downloadPdf.setFont('helvetica', 'normal');
-          downloadPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, bankBoxBottomY2 + qrPdfHeight + 2, { align: 'center' });
-          yPos = bankBoxBottomY2 + qrPdfHeight + 10;
-        } else {
-          yPos = bankBoxBottomY2;
-        }
+          downloadPdf.setFillColor(248, 250, 252);
+          let bankFieldCount = 0;
+          if (company.bank_name) bankFieldCount++;
+          if (company.account_number) bankFieldCount++;
+          if (isIndianCompany && company.ifsc_code) bankFieldCount++;
+          if (!isIndianCompany && company.iban) bankFieldCount++;
+          if (!isIndianCompany && company.swift_bic) bankFieldCount++;
+          const bankingBoxHeight = 4 + bankFieldCount * 4;
+          const leftColWidth = 85;
+          downloadPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight, 'F');
+          downloadPdf.setDrawColor(225, 229, 235);
+          downloadPdf.setLineWidth(0.2);
+          downloadPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight);
+
+          downloadPdf.setFontSize(7);
+          downloadPdf.setTextColor(60, 60, 60);
+
+          let bankingYPos = yPos + 2;
+
+          if (company.bank_name) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('Bank:', leftSectionStart + 2, bankingYPos);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.bank_name, leftSectionStart + 15, bankingYPos);
+            bankingYPos += 4;
+          }
+
+          if (company.account_number) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('A/C:', leftSectionStart + 2, bankingYPos);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.account_number, leftSectionStart + 15, bankingYPos);
+            bankingYPos += 4;
+          }
+
+          if (isIndianCompany && company.ifsc_code) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingYPos);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.ifsc_code, leftSectionStart + 15, bankingYPos);
+            bankingYPos += 4;
+          }
+          if (!isIndianCompany && company.iban) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('IBAN:', leftSectionStart + 2, bankingYPos);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.iban, leftSectionStart + 15, bankingYPos);
+            bankingYPos += 4;
+          }
+          if (!isIndianCompany && company.swift_bic) {
+            downloadPdf.setFont('helvetica', 'bold');
+            downloadPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingYPos);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text(company.swift_bic, leftSectionStart + 22, bankingYPos);
+          }
+
+          // QR code directly below banking box (stacked layout)
+          const bankBoxBottomY2 = yPos - 2 + bankingBoxHeight + 5;
+          const dlQrData2 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
+          if (dlQrData2) {
+            const qrPdfWidth = 50;
+            const qrPdfHeight = qrPdfWidth * (dlQrData2.height / dlQrData2.width);
+            downloadPdf.addImage(dlQrData2.dataUrl, 'JPEG', leftSectionStart, bankBoxBottomY2, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
+            downloadPdf.setFontSize(6);
+            downloadPdf.setTextColor(100, 100, 100);
+            downloadPdf.setFont('helvetica', 'normal');
+            downloadPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, bankBoxBottomY2 + qrPdfHeight + 2, { align: 'center' });
+            yPos = bankBoxBottomY2 + qrPdfHeight + 10;
+          } else {
+            yPos = bankBoxBottomY2;
+          }
         } // end Indian banking (stacked)
       }
 
@@ -2288,7 +2288,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         downloadPdf.setFontSize(8);
         downloadPdf.setFont('helvetica', 'bold');
         downloadPdf.text('Notes', leftMargin, yPos);
-        
+
         yPos += 5;
         downloadPdf.setFontSize(6);
         downloadPdf.setFont('helvetica', 'normal');
@@ -2297,14 +2297,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         downloadPdf.text(notesLines, leftMargin, yPos);
         yPos += notesLines.length * 3 + 5;
       }
-      
+
       // Terms & Conditions - compact and clean
       if (fullInvoice.terms_conditions) {
         downloadPdf.setTextColor(37, 99, 235);
         downloadPdf.setFontSize(8);
         downloadPdf.setFont('helvetica', 'bold');
         downloadPdf.text('Terms & Conditions', leftMargin, yPos);
-        
+
         yPos += 4;
         downloadPdf.setFontSize(5.5);
         downloadPdf.setFont('helvetica', 'normal');
@@ -2313,37 +2313,37 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         downloadPdf.text(termsLines, leftMargin, yPos);
         yPos += termsLines.length * 2.5 + 5;
       }
-      
+
       // Professional Footer - respect footer image positioning
       console.log(`Current yPos before footer: ${yPos.toFixed(1)}mm`);
       console.log(`contentEndY (calculated by footer image): ${contentEndY.toFixed(1)}mm`);
-      
+
       // Position footer text just above the footer image area
       const footerStartY = contentEndY - 2;
       yPos = footerStartY;
-      
+
       console.log(`Forced footer text yPos to: ${yPos.toFixed(1)}mm (based on contentEndY with gap)`);
-      
+
       downloadPdf.setDrawColor(240, 240, 240);
       downloadPdf.setLineWidth(0.2);
       downloadPdf.line(leftMargin, yPos, rightMargin, yPos);
-      
+
       yPos += 4;
       downloadPdf.setTextColor(37, 99, 235);
       downloadPdf.setFontSize(7);
       downloadPdf.setFont('helvetica', 'bold');
       downloadPdf.text('Thank you for your business!', 105, yPos, { align: 'center' });
-      
+
       yPos += 3;
       downloadPdf.setTextColor(120, 120, 120);
       downloadPdf.setFontSize(5.5);
       downloadPdf.setFont('helvetica', 'normal');
       downloadPdf.text('This is a computer-generated invoice and does not require a signature.', 105, yPos, { align: 'center' });
-      
+
       // Save with descriptive filename
       const downloadFilename = `Invoice-${fullInvoice.invoice_number}-${customer.company_name || customer.contact_person || 'Customer'}.pdf`;
       downloadPdf.save(downloadFilename.replace(/[^a-zA-Z0-9.-]/g, '_')); // Clean filename
-      
+
       showSuccess(`Invoice ${fullInvoice.invoice_number} downloaded successfully!`);
     } catch (error) {
       console.error('Failed to download invoice:', error);
@@ -2373,7 +2373,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   const handleEmailInvoice = async (invoice: Invoice) => {
     try {
       showInfo('📧 Preparing to send invoice email...');
-      
+
       // Ensure customers are loaded
       let currentCustomers = customers;
       if (customers.length === 0) {
@@ -2390,10 +2390,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           return;
         }
       }
-      
+
       // Find customer
       const customer = currentCustomers.find(c => c.id === invoice.customer_id);
-      
+
       if (!customer) {
         showError(`Cannot send email: Customer not found (ID: ${invoice.customer_id}). Please refresh the page and try again.`);
         return;
@@ -2426,7 +2426,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
       // Get company settings for email content
       const company = selectedCompany || companySettings.find(c => c.is_default) || selectedCompany || companySettings[0];
-      
+
       if (!company) {
         showError('Cannot send email: No company settings found. Please go to Settings and configure your company information first, then try again.');
         navigate('/admin/settings');
@@ -2457,7 +2457,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       const leftMargin = 10;
       const rightMargin = pageWidth - 10;
       let yPos = 10;
-      
+
       // Get currency info for the customer
       const selectedCustomer = customer;
       const nativeCurrencyInfo = getCurrencyInfo(selectedCustomer);
@@ -2468,14 +2468,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
       // Use same branding system as download PDF
       const dimensions = PDFBrandingUtils.getStandardDimensions();
-      
+
       // Apply branding images (header, footer, logo) - same as download
       const { contentStartY, contentEndY } = await PDFBrandingUtils.applyBranding(
-        emailPdf, 
-        company, 
+        emailPdf,
+        company,
         dimensions
       );
-      
+
       // Create branded header section - same as download
       yPos = PDFBrandingUtils.createBrandedHeader(
         emailPdf,
@@ -2486,76 +2486,76 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         dimensions,
         contentStartY
       );
-      
+
       // Company and Customer Information Section - Two columns with aligned starting positions
       emailPdf.setTextColor(0, 0, 0);
-      
+
       // Remember starting position for both columns
       const fromToStartY = yPos;
       let fromYPos = fromToStartY;
       let billToYPos = fromToStartY;
       const billToX = 110;
       const billToMaxWidth = 85; // Maximum width for customer details to prevent overflow
-      
+
       // FROM Section (Left Column)
       emailPdf.setFontSize(9);
       emailPdf.setFont('helvetica', 'bold');
       emailPdf.text('From:', leftMargin, fromYPos);
-      
+
       fromYPos += 5;
       emailPdf.setFontSize(11);
       emailPdf.setFont('helvetica', 'bold');
       const companyNameLines = emailPdf.splitTextToSize(company.company_name, 85);
       emailPdf.text(companyNameLines, leftMargin, fromYPos);
       fromYPos += companyNameLines.length * 4.5;
-      
+
       emailPdf.setFontSize(8);
       emailPdf.setFont('helvetica', 'normal');
       emailPdf.setTextColor(60, 60, 60);
-      
+
       if (company.legal_name && company.legal_name !== company.company_name) {
         const legalNameLines = emailPdf.splitTextToSize(company.legal_name, 85);
         emailPdf.text(legalNameLines, leftMargin, fromYPos);
         fromYPos += legalNameLines.length * 4;
       }
-      
+
       if (company.address_line1) {
         const address1Lines = emailPdf.splitTextToSize(company.address_line1, 85);
         emailPdf.text(address1Lines, leftMargin, fromYPos);
         fromYPos += address1Lines.length * 4;
       }
-      
+
       if (company.address_line2) {
         const address2Lines = emailPdf.splitTextToSize(company.address_line2, 85);
         emailPdf.text(address2Lines, leftMargin, fromYPos);
         fromYPos += address2Lines.length * 4;
       }
-      
+
       const companyLocation = [company.city, company.state, company.postal_code].filter(Boolean).join(', ');
       if (companyLocation) {
         const locationLines = emailPdf.splitTextToSize(companyLocation, 85);
         emailPdf.text(locationLines, leftMargin, fromYPos);
         fromYPos += locationLines.length * 4;
       }
-      
+
       if (company.email) {
         const emailLines = emailPdf.splitTextToSize('Email: ' + company.email, 85);
         emailPdf.text(emailLines, leftMargin, fromYPos);
         fromYPos += emailLines.length * 4;
       }
-      
+
       if (company.phone) {
         const phoneLines = emailPdf.splitTextToSize('Phone: ' + company.phone, 85);
         emailPdf.text(phoneLines, leftMargin, fromYPos);
         fromYPos += phoneLines.length * 4;
       }
-      
+
       if (company.website) {
         const websiteLines = emailPdf.splitTextToSize('Website: ' + company.website, 85);
         emailPdf.text(websiteLines, leftMargin, fromYPos);
         fromYPos += websiteLines.length * 4;
       }
-      
+
       const taxFields = getCompanyTaxFields(company.country?.code);
       taxFields.fields.forEach((field) => {
         const value = company[field.key as keyof CompanySettings] as string | undefined;
@@ -2565,75 +2565,75 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           fromYPos += fieldLines.length * 4;
         }
       });
-      
+
       if (company.pan && !taxFields.fields.some(f => f.key === 'pan')) {
         const panLabel = (company.country?.code === 'IN' || company.country?.code === 'IND') ? 'PAN' : 'Tax ID';
         const panLines = emailPdf.splitTextToSize(`${panLabel}: ` + company.pan, 85);
         emailPdf.text(panLines, leftMargin, fromYPos);
         fromYPos += panLines.length * 4;
       }
-      
+
       // BILL TO Section (Right Column) - aligned with FROM section
       emailPdf.setTextColor(0, 0, 0);
       emailPdf.setFontSize(9);
       emailPdf.setFont('helvetica', 'bold');
       emailPdf.text('Bill To:', billToX, billToYPos);
-      
+
       billToYPos += 5;
       emailPdf.setFontSize(11);
       emailPdf.setFont('helvetica', 'bold');
       emailPdf.setTextColor(37, 99, 235);
-      
+
       // Wrap customer name properly
       const customerName = customer.company_name || customer.contact_person || 'N/A';
       const customerNameLines = emailPdf.splitTextToSize(customerName, billToMaxWidth);
       emailPdf.text(customerNameLines, billToX, billToYPos);
       billToYPos += customerNameLines.length * 4.5;
-      
+
       emailPdf.setFontSize(8);
       emailPdf.setFont('helvetica', 'normal');
       emailPdf.setTextColor(60, 60, 60);
-      
+
       if (customer.contact_person && customer.company_name) {
         const attnText = 'Attn: ' + customer.contact_person;
         const attnLines = emailPdf.splitTextToSize(attnText, billToMaxWidth);
         emailPdf.text(attnLines, billToX, billToYPos);
         billToYPos += attnLines.length * 4;
       }
-      
+
       if (customer.address_line1) {
         const addr1Lines = emailPdf.splitTextToSize(customer.address_line1, billToMaxWidth);
         emailPdf.text(addr1Lines, billToX, billToYPos);
         billToYPos += addr1Lines.length * 4;
       }
-      
+
       if (customer.address_line2) {
         const addr2Lines = emailPdf.splitTextToSize(customer.address_line2, billToMaxWidth);
         emailPdf.text(addr2Lines, billToX, billToYPos);
         billToYPos += addr2Lines.length * 4;
       }
-      
+
       const customerLocation = [customer.city, customer.state, customer.postal_code].filter(Boolean).join(', ');
       if (customerLocation) {
         const locationLines = emailPdf.splitTextToSize(customerLocation, billToMaxWidth);
         emailPdf.text(locationLines, billToX, billToYPos);
         billToYPos += locationLines.length * 4;
       }
-      
+
       if (customer.email) {
         const emailText = 'Email: ' + customer.email;
         const emailLines = emailPdf.splitTextToSize(emailText, billToMaxWidth);
         emailPdf.text(emailLines, billToX, billToYPos);
         billToYPos += emailLines.length * 4;
       }
-      
+
       if (customer.phone) {
         const phoneText = 'Phone: ' + customer.phone;
         const phoneLines = emailPdf.splitTextToSize(phoneText, billToMaxWidth);
         emailPdf.text(phoneLines, billToX, billToYPos);
         billToYPos += phoneLines.length * 4;
       }
-      
+
       if (customer.gstin) {
         const taxRegLabel = getTaxRegistrationLabel(customer);
         const taxRegText = `${taxRegLabel}: ` + customer.gstin;
@@ -2649,7 +2649,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         emailPdf.text(panLines, billToX, billToYPos);
         billToYPos += panLines.length * 4;
       }
-      
+
       // Payment Status Badge - compact and professional
       const statusX = billToX;
       billToYPos += 5;
@@ -2725,7 +2725,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // Professional Items Table
       emailPdf.setFillColor(245, 247, 250);
       emailPdf.rect(leftMargin, yPos, 180, 8, 'F');
-      
+
       emailPdf.setTextColor(37, 99, 235);
       emailPdf.setFontSize(8);
       emailPdf.setFont('helvetica', 'bold');
@@ -2734,20 +2734,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       emailPdf.text('Rate', leftMargin + 120, yPos + 5, { align: 'center' });
       emailPdf.text(`${taxLabel}%`, leftMargin + 145, yPos + 5, { align: 'center' });
       emailPdf.text('Amount', leftMargin + 175, yPos + 5, { align: 'right' });
-      
+
       yPos += 8;
-      
+
       // Table border
       emailPdf.setDrawColor(220, 220, 220);
       emailPdf.setLineWidth(0.1);
-      
+
       // Items with better spacing and typography
       emailPdf.setTextColor(0, 0, 0);
       emailPdf.setFont('helvetica', 'normal');
-      
+
       // Get currency symbol dynamically from customer's country - with safety checks
       let safeCurrencySymbol = 'Rs.'; // Default safe ASCII fallback
-      
+
       // Safely extract currency symbol and convert to ASCII-safe version
       if (currencyInfo && currencyInfo.code) {
         const currencyCode = currencyInfo.code.toUpperCase();
@@ -2768,20 +2768,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             safeCurrencySymbol = currencyCode || 'Rs.';
         }
       }
-      
+
       console.log('📧 Email PDF currency symbol:', {
         customerCountry: selectedCustomer?.country_id || 'Unknown',
         currencySymbol: safeCurrencySymbol,
         currencyCode: currencyInfo?.code || 'Unknown',
         currencyName: currencyInfo?.name || 'Unknown'
       });
-      
+
       // Helper function to format numbers with Indian comma format - SAME AS DOWNLOAD PDF
       const formatIndianNumber = (amount: number): string => {
         const amountStr = amount.toString();
         let wholePart: string;
         let decimalPart: string;
-        
+
         if (!amountStr.includes('.')) {
           wholePart = amountStr;
           decimalPart = '00';
@@ -2795,11 +2795,11 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             decimalPart = decimalPart.substring(0, 2);
           }
         }
-        
+
         // Add Indian comma formatting (lakhs/crores)
         let formattedWhole = '';
         const wholePartReversed = wholePart.split('').reverse().join('');
-        
+
         for (let i = 0; i < wholePartReversed.length; i++) {
           if (i === 3) {
             formattedWhole = ',' + formattedWhole;
@@ -2808,10 +2808,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           }
           formattedWhole = wholePartReversed[i] + formattedWhole;
         }
-        
+
         return formattedWhole + '.' + decimalPart;
       };
-      
+
       if (fullInvoice.invoice_items && fullInvoice.invoice_items.length > 0) {
         fullInvoice.invoice_items.forEach((item: any, index: number) => {
           // Calculate based on item type
@@ -2824,26 +2824,26 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           }
           const itemTax = itemSubtotal * item.tax_rate / 100;
           const itemTotal = itemSubtotal + itemTax;
-          
+
           // Calculate proper row height based on content
           const itemText = item.item_name + (item.description ? ` - ${item.description}` : '');
           const itemLines = emailPdf.splitTextToSize(itemText, 80); // Slightly reduce width for HSN code space
           const hasHsnCode = item.hsn_code ? true : false;
           const itemRowHeight = Math.max(itemLines.length * 3 + (hasHsnCode ? 6 : 3), 12); // Dynamic height
-          
+
           // Alternating row background with proper height
           if (index % 2 === 0) {
             emailPdf.setFillColor(252, 253, 254);
             emailPdf.rect(leftMargin, yPos - 2, 180, itemRowHeight, 'F');
           }
-          
+
           emailPdf.setFontSize(8);
           emailPdf.setFont('helvetica', 'bold');
           emailPdf.setTextColor(0, 0, 0);
-          
+
           // Item name with description - positioned at top of row
           emailPdf.text(itemLines, leftMargin + 2, yPos + 3);
-          
+
           // Classification Code - positioned below description with proper spacing
           if (item.hsn_code) {
             const hsnYPos = yPos + 3 + (itemLines.length * 3) + 1; // Position below description
@@ -2854,28 +2854,28 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             const shortLabel = classificationLabel === 'HSN Code' ? 'HSN' : 'Code';
             emailPdf.text(`${shortLabel}: ${item.hsn_code}`, leftMargin + 2, hsnYPos);
           }
-          
+
           // Reset for numbers - position at the top baseline for proper alignment
           const numbersYPos = yPos + 3; // Same baseline as item text for proper alignment
           emailPdf.setFontSize(8);
           emailPdf.setFont('helvetica', 'normal');
           emailPdf.setTextColor(0, 0, 0);
-          
+
           // Quantity with unit
           emailPdf.text(`${item.quantity} ${item.unit || 'pcs'}`, leftMargin + 95, numbersYPos, { align: 'center' });
-          
+
           // Unit price with currency and comma formatting
           const formattedUnitPrice = formatIndianNumber(item.unit_price);
           emailPdf.text(`${safeCurrencySymbol} ${formattedUnitPrice}`, leftMargin + 120, numbersYPos, { align: 'center' });
-          
+
           // Tax rate
           emailPdf.text(`${item.tax_rate.toFixed(1)}%`, leftMargin + 145, numbersYPos, { align: 'center' });
-          
+
           // Total amount with currency and comma formatting
           emailPdf.setFont('helvetica', 'bold');
           const formattedItemTotal = formatIndianNumber(itemTotal);
           emailPdf.text(`${safeCurrencySymbol} ${formattedItemTotal}`, leftMargin + 175, numbersYPos, { align: 'right' });
-          
+
           yPos += itemRowHeight;
         });
       } else {
@@ -2884,19 +2884,19 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         emailPdf.text('No items found', leftMargin + 2, yPos + 3);
         yPos += 8;
       }
-      
+
       // Table bottom border
       emailPdf.setDrawColor(200, 200, 200);
       emailPdf.setLineWidth(0.3);
       emailPdf.line(leftMargin, yPos, leftMargin + 180, yPos);
-      
+
       yPos += 10;
-      
+
       // Professional Totals Section - aligned with table boundary
       const tableWidth = 180; // Same as table width
       const totalsWidth = 60; // Slightly wider for better formatting
       const totalsStartX = leftMargin + tableWidth - totalsWidth; // Right-align with table
-      
+
       // Calculate totals box height based on whether discount is present
       const hasDiscount = fullInvoice.discount_amount && fullInvoice.discount_amount > 0;
       // const inrPayments = ((fullInvoice.currency_code || '').toUpperCase() !== 'INR')
@@ -2951,13 +2951,13 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       emailPdf.setFont('helvetica', 'bold');
       const taxWithCurrency = safeCurrencySymbol + ' ' + taxAmountText;
       emailPdf.text(taxWithCurrency, totalsStartX + totalsWidth - 3, yPos + 2, { align: 'right' });
-      
+
       // Total line - elegant
       yPos += 6;
       emailPdf.setDrawColor(37, 99, 235);
       emailPdf.setLineWidth(0.3);
       emailPdf.line(totalsStartX + 3, yPos, totalsStartX + totalsWidth - 3, yPos);
-      
+
       yPos += 6;
       emailPdf.setFontSize(9);
       emailPdf.setFont('helvetica', 'bold');
@@ -2976,22 +2976,22 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // }
 
       yPos += 8;
-      
+
       // Amount in Words - positioned directly below totals
       const amountInWords = formatAmountInWords(total, currencyInfo.name);
-      
+
       emailPdf.setTextColor(37, 99, 235);
       emailPdf.setFontSize(9);
       emailPdf.setFont('helvetica', 'bold');
       emailPdf.text('Amount in Words', totalsStartX, yPos);
-      
+
       yPos += 5;
       emailPdf.setFontSize(7);
       emailPdf.setFont('helvetica', 'italic');
       emailPdf.setTextColor(60, 60, 60);
       const amountLines = emailPdf.splitTextToSize(amountInWords, totalsWidth);
       emailPdf.text(amountLines, totalsStartX, yPos);
-      
+
       yPos += amountLines.length * 3 + 8;
 
       // Smart layout: Banking details and Notes positioning (same as download PDF)
@@ -3066,12 +3066,12 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         });
         return startY - 2 + intlBoxHeight;
       };
-      
+
       // If we have banking details but no notes, position banking details beside totals
       if ((bankingDetailsAvailable || intlBankingAvailable) && !notesAvailable) {
         // Position banking details to the left of totals at the same height
         const bankingStartY = totalsStartX > 100 ? (yPos - amountLines.length * 3 - 8 - totalsBoxHeight) : yPos; // Align with totals if space allows
-        
+
         emailPdf.setTextColor(37, 99, 235);
         emailPdf.setFontSize(9);
         emailPdf.setFont('helvetica', 'bold');
@@ -3081,173 +3081,173 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           const intlBoxBottomY = renderIntlBankingBox(leftSectionStart, bankingStartY + 5, 100);
           yPos = Math.max(yPos, intlBoxBottomY + 5);
         } else {
-        const bankingYPos = bankingStartY + 5;
-        emailPdf.setFillColor(248, 250, 252);
-        let bankFieldCount = 0;
-        if (company.bank_name) bankFieldCount++;
-        if (company.account_number) bankFieldCount++;
-        if (isIndianCompany && company.ifsc_code) bankFieldCount++;
-        if (!isIndianCompany && company.iban) bankFieldCount++;
-        if (!isIndianCompany && company.swift_bic) bankFieldCount++;
-        const bankingBoxHeight = 4 + bankFieldCount * 4;
-        const leftColWidth = 85;
-        emailPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight, 'F');
-        emailPdf.setDrawColor(225, 229, 235);
-        emailPdf.setLineWidth(0.2);
-        emailPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight);
-        
-        emailPdf.setFontSize(7);
-        emailPdf.setTextColor(60, 60, 60);
-        
-        let bankingContentY = bankingYPos + 2;
-        
-        if (company.bank_name) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (company.account_number) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (isIndianCompany && company.ifsc_code) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.iban) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.swift_bic) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
-        }
-        
-        // QR code directly below banking box (side-by-side layout)
-        const emBankBoxBottomY1 = bankingYPos - 2 + bankingBoxHeight + 5;
-        const emQrData1 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
-        if (emQrData1) {
-          const qrPdfWidth = 50;
-          const qrPdfHeight = qrPdfWidth * (emQrData1.height / emQrData1.width);
-          emailPdf.addImage(emQrData1.dataUrl, 'JPEG', leftSectionStart, emBankBoxBottomY1, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
-          emailPdf.setFontSize(6);
-          emailPdf.setTextColor(100, 100, 100);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, emBankBoxBottomY1 + qrPdfHeight + 2, { align: 'center' });
-          yPos = Math.max(yPos, emBankBoxBottomY1 + qrPdfHeight + 10);
-        } else {
-          yPos = Math.max(yPos, emBankBoxBottomY1);
-        }
+          const bankingYPos = bankingStartY + 5;
+          emailPdf.setFillColor(248, 250, 252);
+          let bankFieldCount = 0;
+          if (company.bank_name) bankFieldCount++;
+          if (company.account_number) bankFieldCount++;
+          if (isIndianCompany && company.ifsc_code) bankFieldCount++;
+          if (!isIndianCompany && company.iban) bankFieldCount++;
+          if (!isIndianCompany && company.swift_bic) bankFieldCount++;
+          const bankingBoxHeight = 4 + bankFieldCount * 4;
+          const leftColWidth = 85;
+          emailPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight, 'F');
+          emailPdf.setDrawColor(225, 229, 235);
+          emailPdf.setLineWidth(0.2);
+          emailPdf.rect(leftSectionStart, bankingYPos - 2, leftColWidth, bankingBoxHeight);
+
+          emailPdf.setFontSize(7);
+          emailPdf.setTextColor(60, 60, 60);
+
+          let bankingContentY = bankingYPos + 2;
+
+          if (company.bank_name) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (company.account_number) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (isIndianCompany && company.ifsc_code) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.iban) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.swift_bic) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
+          }
+
+          // QR code directly below banking box (side-by-side layout)
+          const emBankBoxBottomY1 = bankingYPos - 2 + bankingBoxHeight + 5;
+          const emQrData1 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
+          if (emQrData1) {
+            const qrPdfWidth = 50;
+            const qrPdfHeight = qrPdfWidth * (emQrData1.height / emQrData1.width);
+            emailPdf.addImage(emQrData1.dataUrl, 'JPEG', leftSectionStart, emBankBoxBottomY1, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
+            emailPdf.setFontSize(6);
+            emailPdf.setTextColor(100, 100, 100);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, emBankBoxBottomY1 + qrPdfHeight + 2, { align: 'center' });
+            yPos = Math.max(yPos, emBankBoxBottomY1 + qrPdfHeight + 10);
+          } else {
+            yPos = Math.max(yPos, emBankBoxBottomY1);
+          }
         } // end Indian banking (side-by-side)
-        
+
       } else if (bankingDetailsAvailable || intlBankingAvailable) {
         // Default layout: Banking details below totals (when notes are present)
         emailPdf.setTextColor(37, 99, 235);
         emailPdf.setFontSize(9);
         emailPdf.setFont('helvetica', 'bold');
         emailPdf.text('Banking Details', leftSectionStart, yPos);
-        
+
         yPos += 5;
 
         if (intlBankingAvailable) {
           const intlBoxBottomY = renderIntlBankingBox(leftSectionStart, yPos, 100);
           yPos = intlBoxBottomY + 5;
         } else {
-        emailPdf.setFillColor(248, 250, 252);
-        let bankFieldCount = 0;
-        if (company.bank_name) bankFieldCount++;
-        if (company.account_number) bankFieldCount++;
-        if (isIndianCompany && company.ifsc_code) bankFieldCount++;
-        if (!isIndianCompany && company.iban) bankFieldCount++;
-        if (!isIndianCompany && company.swift_bic) bankFieldCount++;
-        if (company.branch_name) bankFieldCount++;
-        const bankingBoxHeight = 4 + bankFieldCount * 4;
-        const leftColWidth = 90;
-        emailPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight, 'F');
-        emailPdf.setDrawColor(225, 229, 235);
-        emailPdf.setLineWidth(0.2);
-        emailPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight);
-        
-        emailPdf.setFontSize(7);
-        emailPdf.setTextColor(60, 60, 60);
-        
-        let bankingContentY = yPos + 2;
-        
-        if (company.bank_name) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (company.account_number) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (isIndianCompany && company.ifsc_code) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.iban) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
-          bankingContentY += 4;
-        }
-        if (!isIndianCompany && company.swift_bic) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
-          bankingContentY += 4;
-        }
-        
-        if (company.branch_name) {
-          emailPdf.setFont('helvetica', 'bold');
-          emailPdf.text('Branch:', leftSectionStart + 2, bankingContentY);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text(company.branch_name, leftSectionStart + 15, bankingContentY);
-        }
-        
-        // QR code directly below banking box (stacked layout)
-        const emBankBoxBottomY2 = yPos - 2 + bankingBoxHeight + 5;
-        const emQrData2 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
-        if (emQrData2) {
-          const qrPdfWidth = 50;
-          const qrPdfHeight = qrPdfWidth * (emQrData2.height / emQrData2.width);
-          emailPdf.addImage(emQrData2.dataUrl, 'JPEG', leftSectionStart, emBankBoxBottomY2, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
-          emailPdf.setFontSize(6);
-          emailPdf.setTextColor(100, 100, 100);
-          emailPdf.setFont('helvetica', 'normal');
-          emailPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, emBankBoxBottomY2 + qrPdfHeight + 2, { align: 'center' });
-          yPos = emBankBoxBottomY2 + qrPdfHeight + 10;
-        } else {
-          yPos = emBankBoxBottomY2;
-        }
+          emailPdf.setFillColor(248, 250, 252);
+          let bankFieldCount = 0;
+          if (company.bank_name) bankFieldCount++;
+          if (company.account_number) bankFieldCount++;
+          if (isIndianCompany && company.ifsc_code) bankFieldCount++;
+          if (!isIndianCompany && company.iban) bankFieldCount++;
+          if (!isIndianCompany && company.swift_bic) bankFieldCount++;
+          if (company.branch_name) bankFieldCount++;
+          const bankingBoxHeight = 4 + bankFieldCount * 4;
+          const leftColWidth = 90;
+          emailPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight, 'F');
+          emailPdf.setDrawColor(225, 229, 235);
+          emailPdf.setLineWidth(0.2);
+          emailPdf.rect(leftSectionStart, yPos - 2, leftColWidth, bankingBoxHeight);
+
+          emailPdf.setFontSize(7);
+          emailPdf.setTextColor(60, 60, 60);
+
+          let bankingContentY = yPos + 2;
+
+          if (company.bank_name) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('Bank:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.bank_name, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (company.account_number) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('A/C:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.account_number, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (isIndianCompany && company.ifsc_code) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text(`${getBankingLabel(company)}:`, leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.ifsc_code, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.iban) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('IBAN:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.iban, leftSectionStart + 15, bankingContentY);
+            bankingContentY += 4;
+          }
+          if (!isIndianCompany && company.swift_bic) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('SWIFT/BIC:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.swift_bic, leftSectionStart + 22, bankingContentY);
+            bankingContentY += 4;
+          }
+
+          if (company.branch_name) {
+            emailPdf.setFont('helvetica', 'bold');
+            emailPdf.text('Branch:', leftSectionStart + 2, bankingContentY);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text(company.branch_name, leftSectionStart + 15, bankingContentY);
+          }
+
+          // QR code directly below banking box (stacked layout)
+          const emBankBoxBottomY2 = yPos - 2 + bankingBoxHeight + 5;
+          const emQrData2 = (isIndianCompany && isIndianCurrency) ? await loadQRCodeImage() : null;
+          if (emQrData2) {
+            const qrPdfWidth = 50;
+            const qrPdfHeight = qrPdfWidth * (emQrData2.height / emQrData2.width);
+            emailPdf.addImage(emQrData2.dataUrl, 'JPEG', leftSectionStart, emBankBoxBottomY2, qrPdfWidth, qrPdfHeight, undefined, 'FAST');
+            emailPdf.setFontSize(6);
+            emailPdf.setTextColor(100, 100, 100);
+            emailPdf.setFont('helvetica', 'normal');
+            emailPdf.text('Scan to Pay', leftSectionStart + qrPdfWidth / 2, emBankBoxBottomY2 + qrPdfHeight + 2, { align: 'center' });
+            yPos = emBankBoxBottomY2 + qrPdfHeight + 10;
+          } else {
+            yPos = emBankBoxBottomY2;
+          }
         } // end Indian banking (stacked)
       }
 
@@ -3257,7 +3257,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         emailPdf.setFontSize(8);
         emailPdf.setFont('helvetica', 'bold');
         emailPdf.text('Notes', leftSectionStart, yPos);
-        
+
         yPos += 4;
         emailPdf.setFontSize(6);
         emailPdf.setFont('helvetica', 'normal');
@@ -3266,14 +3266,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         emailPdf.text(notesLines, leftSectionStart, yPos);
         yPos += notesLines.length * 2.5 + 4;
       }
-      
+
       // Terms & Conditions - compact and clean
       if (fullInvoice.terms_conditions) {
         emailPdf.setTextColor(37, 99, 235);
         emailPdf.setFontSize(8);
         emailPdf.setFont('helvetica', 'bold');
         emailPdf.text('Terms & Conditions', leftSectionStart, yPos);
-        
+
         yPos += 4;
         emailPdf.setFontSize(5.5);
         emailPdf.setFont('helvetica', 'normal');
@@ -3282,27 +3282,27 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         emailPdf.text(termsLines, leftSectionStart, yPos);
         yPos += termsLines.length * 2.5 + 4;
       }
-      
+
       // Professional Footer - respect footer image positioning
       console.log(`EMAIL PDF - Current yPos before footer: ${yPos.toFixed(1)}mm`);
       console.log(`EMAIL PDF - contentEndY (calculated by footer image): ${contentEndY.toFixed(1)}mm`);
-      
+
       // Position footer text just above the footer image area
       const footerStartY = contentEndY - 2;
       yPos = footerStartY;
-      
+
       console.log(`EMAIL PDF - Forced footer text yPos to: ${yPos.toFixed(1)}mm (based on contentEndY with gap)`);
-      
+
       emailPdf.setDrawColor(240, 240, 240);
       emailPdf.setLineWidth(0.2);
       emailPdf.line(leftMargin, yPos, rightMargin, yPos);
-      
+
       yPos += 4;
       emailPdf.setTextColor(37, 99, 235);
       emailPdf.setFontSize(7);
       emailPdf.setFont('helvetica', 'bold');
       emailPdf.text('Thank you for your business!', 105, yPos, { align: 'center' });
-      
+
       yPos += 3;
       emailPdf.setTextColor(120, 120, 120);
       emailPdf.setFontSize(5.5);
@@ -3315,9 +3315,9 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // Check PDF size (much smaller now with native PDF generation)
       const emailPdfSizeKB = (emailPdfBase64.length * 3) / 4 / 1024; // Approximate size in KB
       console.log(`📄 Generated crisp PDF size: ${emailPdfSizeKB.toFixed(2)} KB`);
-      
+
       if (emailPdfSizeKB > 25000) { // 25MB limit (very unlikely now with native PDF)
-        showError(`❌ PDF file too large (${(emailPdfSizeKB/1024).toFixed(1)}MB). Maximum size is 25MB.`);
+        showError(`❌ PDF file too large (${(emailPdfSizeKB / 1024).toFixed(1)}MB). Maximum size is 25MB.`);
         return;
       }
 
@@ -3325,7 +3325,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
       // Check if this is a paid invoice
       const isPaidInvoice = fullInvoice.payment_status === 'paid';
-      
+
       if (isPaidInvoice) {
         showInfo('💳 Sending payment confirmation email...');
       } else {
@@ -3346,10 +3346,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         if (!isPaidInvoice) {
           try {
             await invoiceService.updateInvoiceStatus(invoice.id, 'sent');
-            
+
             // Refresh invoices list to show updated status
             await loadData();
-            
+
             showSuccess(`✅ Email sent successfully! Invoice ${invoice.invoice_number} has been emailed to ${customer.email} and status updated to 'Sent'.`);
           } catch (statusError) {
             console.error('Failed to update invoice status:', statusError);
@@ -3377,7 +3377,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
       // Ensure customers are loaded
       const allCustomers = await ensureCustomersLoaded();
-      
+
       // Find the customer for this invoice
       const customer = allCustomers.find(c => c.id === invoice.customer_id);
       if (!customer) {
@@ -3419,7 +3419,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       // Calculate invoice totals for payment amount
       const selectedCustomer = allCustomers.find(c => c.id === invoice.customer_id);
       const currencyInfo = getCurrencyInfo(selectedCustomer);
-      
+
       // Calculate totals using the invoice items
       let subtotal = 0;
       let totalTax = 0;
@@ -3485,7 +3485,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         });
 
         showSuccess(`💳 Payment request created successfully! Email sent to ${customer.email} with secure payment link.`);
-        
+
         // Optionally refresh data to show any status changes
         await loadData();
 
@@ -3559,7 +3559,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       });
 
       // Update invoice table directly with the exact entered paid amount in paid_amount (preserving inr_total_amount)
-      const invoiceUpdates: Record<string, any> = { 
+      const invoiceUpdates: Record<string, any> = {
         paid_at: markAsPaidDate,
         status: 'completed',
         payment_status: 'paid'
@@ -3573,7 +3573,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       try {
         const { error: updateErr } = await supabase
           .from('invoices')
-          .update({ 
+          .update({
             ...invoiceUpdates,
             paid_amount: entityAmount,
             paid_currency: isForeign ? entityCurrency : (markAsPaidInvoice.currency_code || entityCurrency)
@@ -3767,109 +3767,109 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     const entityCurrencyCode = selectedCompany?.country?.currency_code || 'INR';
     const entityCurrencySymbol = getEntityCurrencySymbol(entityCurrencyCode);
     return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <FileText className="h-8 w-8 text-blue-600" />
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <FileText className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats?.total_invoices || 0}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats?.total_invoices || 0}</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {formatCurrency(stats?.total_revenue || 0, entityCurrencyCode)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 bg-yellow-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pending Amount</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {formatCurrency(stats?.pending_amount || 0, entityCurrencyCode)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 bg-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">This Month</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {formatCurrency(stats?.this_month_revenue || 0, entityCurrencyCode)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Status Overview */}
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
-              </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status Overview</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-600">{stats?.draft_invoices || 0}</div>
+              <div className="text-sm text-gray-500">Draft</div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(stats?.total_revenue || 0, entityCurrencyCode)}
-              </p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{stats?.sent_invoices || 0}</div>
+              <div className="text-sm text-gray-500">Sent</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{stats?.paid_invoices || 0}</div>
+              <div className="text-sm text-gray-500">Paid</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{stats?.overdue_invoices || 0}</div>
+              <div className="text-sm text-gray-500">Overdue</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-400">
+                {(stats?.total_invoices || 0) - (stats?.paid_invoices || 0) - (stats?.cancelled_invoices || 0)}
+              </div>
+              <div className="text-sm text-gray-500">Unpaid</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-yellow-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(stats?.pending_amount || 0, entityCurrencyCode)}
-              </p>
-            </div>
+        {/* Recent Invoices */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">{entityCurrencySymbol}</span>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">This Month</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(stats?.this_month_revenue || 0, entityCurrencyCode)}
-              </p>
-            </div>
+          <div className="overflow-x-auto">
+            {renderRecentInvoicesTable(invoices.slice(0, 5))}
           </div>
         </div>
       </div>
-
-      {/* Status Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status Overview</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-600">{stats?.draft_invoices || 0}</div>
-            <div className="text-sm text-gray-500">Draft</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats?.sent_invoices || 0}</div>
-            <div className="text-sm text-gray-500">Sent</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats?.paid_invoices || 0}</div>
-            <div className="text-sm text-gray-500">Paid</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">{stats?.overdue_invoices || 0}</div>
-            <div className="text-sm text-gray-500">Overdue</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-400">
-              {(stats?.total_invoices || 0) - (stats?.paid_invoices || 0) - (stats?.cancelled_invoices || 0)}
-            </div>
-            <div className="text-sm text-gray-500">Unpaid</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Invoices */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
-        </div>
-        <div className="overflow-x-auto">
-          {renderRecentInvoicesTable(invoices.slice(0, 5))}
-        </div>
-      </div>
-    </div>
     );
   };
 
@@ -4017,7 +4017,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             </td>
             <td className="px-4 py-3 whitespace-nowrap">
               <div className="font-bold text-gray-900">
-                <CurrencyDisplay 
+                <CurrencyDisplay
                   amount={invoice.total_amount}
                   currencyCode={invoice.currency_code}
                   inrAmount={getInvoiceIssueInrAmount(invoice)}
@@ -4048,7 +4048,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-right font-medium sticky right-0 bg-white border-l border-gray-200 shadow-xs z-10">
               <div className="flex items-center justify-end space-x-2">
-                <button 
+                <button
                   onClick={() => handleViewInvoice(invoice)}
                   className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition"
                   title="View Invoice"
@@ -4056,7 +4056,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   <Eye className="w-4 h-4" />
                 </button>
                 {(invoice.status === 'draft' || invoice.status === 'sent') && (
-                  <button 
+                  <button
                     onClick={() => handleEditInvoice(invoice)}
                     className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition"
                     title={invoice.status === 'draft' ? 'Edit draft invoice' : 'Edit sent invoice (creates new version)'}
@@ -4065,7 +4065,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   </button>
                 )}
                 {invoice.status !== 'cancelled' && (
-                  <button 
+                  <button
                     onClick={() => handleDownloadInvoice(invoice)}
                     className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50 rounded transition"
                     title="Download Invoice"
@@ -4074,7 +4074,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   </button>
                 )}
                 {invoice.status !== 'cancelled' && (
-                  <button 
+                  <button
                     onClick={() => handleEmailInvoice(invoice)}
                     className="p-1 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded transition"
                     title="Email Invoice"
@@ -4085,7 +4085,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
                 {/* Create Payment Request */}
                 {invoice.status !== 'cancelled' && invoice.payment_status !== 'paid' && (
-                  <button 
+                  <button
                     onClick={() => handleCreatePaymentRequest(invoice)}
                     className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded transition"
                     title="Create Payment Request"
@@ -4096,7 +4096,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
                 {/* Mark as Paid / Record Payment Button */}
                 {invoice.status !== 'cancelled' && (
-                  <button 
+                  <button
                     onClick={() => handleMarkAsPaid(invoice)}
                     className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50 rounded transition"
                     title={invoice.payment_status === 'paid' ? "Update Payment Details" : "Mark as Paid"}
@@ -4107,7 +4107,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
 
                 {/* Delete Button */}
                 {invoice.status !== 'cancelled' && (
-                  <button 
+                  <button
                     onClick={() => handleDeleteInvoice(invoice)}
                     className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition"
                     title="Delete Invoice"
@@ -4179,7 +4179,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             </td>
             <td className="px-4 py-3 whitespace-nowrap">
               <div className="font-bold text-gray-900">
-                <CurrencyDisplay 
+                <CurrencyDisplay
                   amount={invoice.total_amount}
                   currencyCode={invoice.currency_code}
                   inrAmount={getInvoiceIssueInrAmount(invoice)}
@@ -4210,7 +4210,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-right font-medium sticky right-0 bg-white border-l border-gray-200 shadow-xs z-10">
               <div className="flex items-center justify-end space-x-2">
-                <button 
+                <button
                   onClick={() => handleViewInvoice(invoice)}
                   className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded transition"
                   title="View Invoice"
@@ -4218,7 +4218,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   <Eye className="w-4 h-4" />
                 </button>
                 {invoice.status !== 'cancelled' && (
-                  <button 
+                  <button
                     onClick={() => handleDownloadInvoice(invoice)}
                     className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50 rounded transition"
                     title="Download Invoice"
@@ -4238,39 +4238,39 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     <div className="space-y-6">
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-         <h2 className="text-2xl font-bold text-gray-900">Invoices</h2>
-         <div className="mt-4 sm:mt-0 flex gap-2">
-           <button
-             onClick={() => {
-               const unpaid = invoices.filter(inv => inv.payment_status !== 'paid');
-               if (unpaid.length > 0) {
-                 unpaid.forEach(inv => handleSyncPaymentStatus(inv));
-               } else {
-                 showInfo('All invoices are already marked as paid.');
-               }
-             }}
-             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-             title="Sync payment statuses from gateways"
-           >
-             <RefreshCw className="w-4 h-4 mr-2" />
-             Sync Payments
-           </button>
-           <button
-             onClick={handleGenerateDraftInvoices}
-             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-           >
-             <FileText className="w-4 h-4 mr-2" />
-             Generate Draft Invoices
-           </button>
-           <button
-             onClick={() => openCreateInvoiceTab()}
-             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-           >
-             <Plus className="w-4 h-4 mr-2" />
-             Create Invoice
-           </button>
-         </div>
-       </div>
+        <h2 className="text-2xl font-bold text-gray-900">Invoices</h2>
+        <div className="mt-4 sm:mt-0 flex gap-2">
+          <button
+            onClick={() => {
+              const unpaid = invoices.filter(inv => inv.payment_status !== 'paid');
+              if (unpaid.length > 0) {
+                unpaid.forEach(inv => handleSyncPaymentStatus(inv));
+              } else {
+                showInfo('All invoices are already marked as paid.');
+              }
+            }}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            title="Sync payment statuses from gateways"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Sync Payments
+          </button>
+          <button
+            onClick={handleGenerateDraftInvoices}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Generate Draft Invoices
+          </button>
+          <button
+            onClick={() => openCreateInvoiceTab()}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Invoice
+          </button>
+        </div>
+      </div>
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -4327,7 +4327,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         <div className="overflow-x-auto relative">
           {renderInvoiceTable()}
         </div>
-        
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
@@ -4373,7 +4373,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
         <div className="text-center">
           <div className="text-red-600 text-lg font-medium mb-2">Error</div>
           <p className="text-gray-600">{error}</p>
-          <button 
+          <button
             onClick={loadData}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
@@ -4394,7 +4394,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       ? { symbol: '₹', code: 'INR', name: 'Rupees' }
       : nativeCurrencyInfo;
     const company = selectedInvoice?.company_settings || selectedCompany || companySettings.find(c => c.is_default) || companySettings[0];
-    
+
     // Get dynamic tax label based on customer's country
     const taxLabel = getTaxLabel(selectedCustomer);
 
@@ -4405,14 +4405,14 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     });
 
     return (
-      <div className="bg-white p-6 shadow-lg max-w-4xl mx-auto" style={{fontSize: '14px', lineHeight: '1.4'}}>
+      <div className="bg-white p-6 shadow-lg max-w-4xl mx-auto" style={{ fontSize: '14px', lineHeight: '1.4' }}>
         {/* Company Header - More Compact */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1">
             {company?.logo_url && (
-              <img 
-                src={company.logo_url} 
-                alt="Company Logo" 
+              <img
+                src={company.logo_url}
+                alt="Company Logo"
                 className="h-12 w-auto mb-3"
               />
             )}
@@ -4556,8 +4556,8 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                       {item.description}
                       {item.is_service_item && item.billable_hours && (
                         <div className="text-xs text-blue-600 mt-1">
-                          <strong>Service Details:</strong><br/>
-                          Resources: {item.resource_count || 1} | Billable Hrs/Month: {item.billable_hours}<br/>
+                          <strong>Service Details:</strong><br />
+                          Resources: {item.resource_count || 1} | Billable Hrs/Month: {item.billable_hours}<br />
                           Calculation: {item.resource_count || 1} × {item.quantity} months × {item.billable_hours} hrs × {formatCurrencyAmount(item.unit_price, currencyInfo)}
                         </div>
                       )}
@@ -4600,7 +4600,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
               </div>
             )}
           </div>
-          
+
           {/* Totals Section - Right Side */}
           <div className="w-48">
             <div className="border border-gray-300 text-xs">
@@ -4731,20 +4731,20 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     );
   };
 
-   return (
-     <div className="min-h-screen bg-gray-100">
-       {/* Full-screen loading overlay */}
-       {modalLoading && (
-         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-           <div className="bg-white rounded-lg p-6 shadow-xl flex items-center space-x-3">
-             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-             <span className="text-sm font-medium text-gray-700">Saving invoice...</span>
-           </div>
-         </div>
-       )}
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Full-screen loading overlay */}
+      {modalLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-sm font-medium text-gray-700">Saving invoice...</span>
+          </div>
+        </div>
+      )}
 
-       {/* Header */}
-       <header className="bg-white shadow-sm border-b border-gray-200">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -4775,11 +4775,10 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
               <button
                 key={key}
                 onClick={() => key === 'create-invoice' ? openCreateInvoiceTab() : goToTab(key as InvoiceTab)}
-                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${activeTab === key
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <Icon className="w-4 h-4 mr-2" />
                 {label}
@@ -4929,7 +4928,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           </div>
         </div>
       )}
-      
+
       {/* Invoice Preview Modal */}
       {showInvoicePreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -4971,7 +4970,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   </div>
                 </div>
               )}
-              
+
               {/* Paid Watermark Overlay */}
               {selectedInvoice?.id && selectedInvoice?.payment_status === 'paid' && selectedInvoice?.status !== 'cancelled' && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -4982,7 +4981,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
                   </div>
                 </div>
               )}
-              
+
               {/* Invoice Content */}
               <div className={selectedInvoice?.id && (selectedInvoice?.status === 'cancelled' || selectedInvoice?.payment_status === 'paid') ? 'relative z-0' : ''}>
                 {renderInvoicePreviewContent()}
@@ -5001,7 +5000,7 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
           </div>
         </div>
       )}
-      
+
       {/* Confirmation Dialog */}
       <ConfirmDialog {...dialogProps} />
 
