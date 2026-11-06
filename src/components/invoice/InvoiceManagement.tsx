@@ -40,6 +40,13 @@ export interface InvoiceManagementProps {
 }
 
 const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const { confirm, dialogProps } = useConfirmDialog();
+  const { startAction, endAction } = useActionProgress();
+  const { selectedCompany } = useCompanyContext();
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -49,7 +56,6 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedCompany } = useCompanyContext();
 
 const getBankingLabel = (company: CompanySettings | undefined | null): string => {
   if (!company) return 'IFSC';
@@ -139,6 +145,44 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   // Currency override: allows billing a foreign customer in INR
   const [useINROverride, setUseINROverride] = useState(false);
 
+  const getCurrencyInfo = (customer: Customer | undefined) => {
+    const customerCountry = customer?.country;
+    if (customerCountry && customerCountry.currency_symbol && customerCountry.currency_code) {
+      return {
+        symbol: customerCountry.currency_symbol,
+        name: customerCountry.currency_name || 'Currency',
+        code: customerCountry.currency_code
+      };
+    }
+    if (customerCountry) {
+      switch (customerCountry.code) {
+        case 'IND':
+          return { symbol: '₹', name: 'Rupees', code: 'INR' };
+        case 'USA':
+          return { symbol: '$', name: 'Dollars', code: 'USD' };
+        case 'GBR':
+        case 'GB':
+        case 'UK':
+          return { symbol: '£', name: 'Pounds', code: 'GBP' };
+        case 'DEU':
+        case 'FRA':
+        case 'ITA':
+        case 'ESP':
+        case 'NLD':
+        case 'IRL':
+        case 'IE':
+          return { symbol: '€', name: 'Euros', code: 'EUR' };
+        default:
+          break;
+      }
+    }
+    return {
+      symbol: '€',
+      name: 'Euros',
+      code: 'EUR'
+    };
+  };
+
   // Debug customer currency changes
   useEffect(() => {
     if (invoiceFormData.customer_id) {
@@ -156,12 +200,6 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
       });
     }
   }, [invoiceFormData.customer_id, customers]);
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { showSuccess, showError, showWarning, showInfo } = useToast();
-  const { confirm, dialogProps } = useConfirmDialog();
-  const { startAction, endAction } = useActionProgress();
 
   // Keep the tab in sync with dedicated per-tab routes so each tab is
   // directly linkable/bookmarkable and browser back/forward works as expected.
@@ -558,69 +596,6 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
     }
     result += ' Only';
     return result.replace(/\s+/g, ' ').trim(); // Remove extra spaces
-  };
-
-  const getCurrencyInfo = (customer: Customer | undefined) => {
-    console.log('🔍 getCurrencyInfo called with customer:', {
-      customer: customer ? {
-        id: customer.id,
-        name: customer.company_name || customer.contact_person,
-        country_id: customer.country_id,
-        country: customer.country
-      } : null
-    });
-
-    const customerCountry = customer?.country;
-    console.log('🌍 Customer country details:', {
-      hasCountry: !!customerCountry,
-      countryCode: customerCountry?.code,
-      currencyCode: customerCountry?.currency_code,
-      currencySymbol: customerCountry?.currency_symbol,
-      currencyName: customerCountry?.currency_name
-    });
-
-    if (customerCountry && customerCountry.currency_symbol && customerCountry.currency_code) {
-      // Use the currency information from the customer's country
-      console.log('✅ Using country currency data:', customerCountry);
-      return {
-        symbol: customerCountry.currency_symbol,
-        name: customerCountry.currency_name || 'Currency',
-        code: customerCountry.currency_code
-      };
-    }
-    
-    // Fallback to hardcoded currencies based on country code if country data doesn't have currency info
-    if (customerCountry) {
-      console.log('⚠️ Using fallback currency for country code:', customerCountry.code);
-      switch (customerCountry.code) {
-        case 'IND':
-          return { symbol: '₹', name: 'Rupees', code: 'INR' };
-        case 'USA':
-          return { symbol: '$', name: 'Dollars', code: 'USD' };
-        case 'GBR':
-        case 'GB':
-        case 'UK':
-          return { symbol: '£', name: 'Pounds', code: 'GBP' };
-        case 'DEU':
-        case 'FRA':
-        case 'ITA':
-        case 'ESP':
-        case 'NLD':
-        case 'IRL':
-        case 'IE':
-          return { symbol: '€', name: 'Euros', code: 'EUR' };
-        default:
-          break;
-      }
-    }
-    
-    // Default to Euro
-    console.log('🔄 Using default currency (EUR) - no country found or no currency data');
-    return {
-      symbol: '€',
-      name: 'Euros',
-      code: 'EUR'
-    };
   };
 
   const formatCurrencyAmount = (amount: number, currencyInfo: { symbol: string; code: string }) => {
