@@ -20,7 +20,7 @@
 +-----------------------------------------------------------------------------------------+
 |                              TIER 2: CLIENT & PERSISTENT LOCAL MEMORY                   |
 |  * `client.config.ts`: Client branding, feature flags, currency & tax settings          |
-|  * `localStorage['template_crm_data_v1']`: Reactive entity store (Customers, Quotes,   |
+|  * `localStorage['template_crm_data_v2']`: Reactive entity store (Customers, Quotes,   |
 |     Invoices, Contracts, Transactions, Rate Cards, Categories)                          |
 |  * `localStorage['template_crm_selected_company_id']`: Active entity selection          |
 |  * `localStorage['template_crm_currency_cache']`: Cached exchange rates (1 hr TTL)     |
