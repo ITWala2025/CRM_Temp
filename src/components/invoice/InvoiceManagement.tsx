@@ -216,9 +216,18 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
   // Keep the tab in sync with dedicated per-tab routes so each tab is
   // directly linkable/bookmarkable and browser back/forward works as expected.
   useEffect(() => {
-    const tabForPath = tabFromPath(location.pathname);
-    setActiveTab(prev => (prev === tabForPath ? prev : tabForPath));
-  }, [location.pathname]);
+    const params = new URLSearchParams(location.search);
+    const action = params.get('action');
+    const customerId = params.get('customerId');
+
+    if (location.pathname === '/admin/invoices/new' || action === 'create') {
+      setActiveTab('create-invoice');
+      openCreateInvoiceTab(customerId || undefined);
+    } else {
+      const tabForPath = tabFromPath(location.pathname);
+      setActiveTab(prev => (prev === tabForPath ? prev : tabForPath));
+    }
+  }, [location.pathname, location.search]);
 
   // Switches tabs and updates the URL to the tab's dedicated route.
   const goToTab = (tab: InvoiceTab) => {
@@ -529,7 +538,7 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
   };
 
   // Invoice Modal Functions
-  const openCreateInvoiceTab = async () => {
+  const openCreateInvoiceTab = async (preselectedCustomerId?: string) => {
     goToTab('create-invoice');
     
     // Ensure all required data is loaded
@@ -570,7 +579,7 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
     }
     
     setInvoiceFormData({
-      customer_id: '',
+      customer_id: preselectedCustomerId || '',
       invoice_date: today,
       due_date: dueDate.toISOString().split('T')[0],
       notes: '',
@@ -589,9 +598,9 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
         item_name: '',
         description: '',
         quantity: 1,
-        unit: 'pcs',
+        unit: 'Milestone',
         unit_price: 0,
-        tax_rate: 18,
+        tax_rate: 23,
         hsn_code: undefined
       }]
     });

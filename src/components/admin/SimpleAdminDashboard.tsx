@@ -103,22 +103,21 @@ export const SimpleAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const pathToView: Record<string, ActiveView> = {
-    '/admin': 'dashboard',
-    '/admin/dashboard': 'dashboard',
-    '/admin/invoices': 'invoices',
-    '/admin/quotes': 'quotes',
-    '/admin/contracts': 'contracts',
-    '/admin/customers': 'customers',
-    '/admin/customer-360': 'customer-360',
-    '/admin/rate-cards': 'rate-cards',
-    '/admin/income': 'income',
-    '/admin/expenses': 'expenses',
-    '/admin/finance': 'finance',
-    '/admin/settings': 'settings',
+  const getActiveView = (pathname: string): ActiveView => {
+    if (pathname.startsWith('/admin/invoices')) return 'invoices';
+    if (pathname.startsWith('/admin/quotes')) return 'quotes';
+    if (pathname.startsWith('/admin/contracts')) return 'contracts';
+    if (pathname.startsWith('/admin/customer-360')) return 'customer-360';
+    if (pathname.startsWith('/admin/customers')) return 'customers';
+    if (pathname.startsWith('/admin/rate-cards')) return 'rate-cards';
+    if (pathname.startsWith('/admin/income')) return 'income';
+    if (pathname.startsWith('/admin/expenses')) return 'expenses';
+    if (pathname.startsWith('/admin/finance')) return 'finance';
+    if (pathname.startsWith('/admin/settings')) return 'settings';
+    return 'dashboard';
   };
 
-  const activeView: ActiveView = pathToView[location.pathname] ?? 'dashboard';
+  const activeView: ActiveView = getActiveView(location.pathname);
 
   const currencySymbol =
     selectedCompany?.country?.currency_symbol ||

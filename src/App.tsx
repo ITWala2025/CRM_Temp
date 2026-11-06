@@ -41,6 +41,9 @@ export function App() {
                 <Route path="/admin/*" element={<SimpleAdminDashboard />} />
 
                 {/* Convenience direct aliases redirecting into the CRM modules */}
+                <Route path="/invoices/new" element={<Navigate to="/admin/invoices/new" replace />} />
+                <Route path="/invoices/list" element={<Navigate to="/admin/invoices/list" replace />} />
+                <Route path="/invoices/*" element={<Navigate to="/admin/invoices" replace />} />
                 <Route path="/invoices" element={<Navigate to="/admin/invoices" replace />} />
                 <Route path="/quotes" element={<Navigate to="/admin/quotes" replace />} />
                 <Route path="/contracts" element={<Navigate to="/admin/contracts" replace />} />
