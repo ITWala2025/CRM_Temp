@@ -9,14 +9,11 @@ import {
   FileText,
   Download,
   Mail,
-  Users,
-  Package,
   ArrowLeft,
   RefreshCw,
   Trash2,
   X,
   Save,
-  Trash,
   CreditCard,
   CheckCircle
 } from 'lucide-react';
@@ -25,22 +22,20 @@ import { supabase } from '../../config/supabase';
 import { invoiceService } from '../../services/invoiceService';
 import { paymentService } from '../../services/paymentService';
 import { EmailService } from '../../services/emailService';
-import { simpleAuth } from '../../utils/simpleAuth';
 import { useToast } from '../ui/ToastProvider';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { PDFBrandingUtils } from '../../utils/pdfBrandingUtils';
-import PDFBrandingManager from '../admin/PDFBrandingManager';
 import { CurrencyDisplay } from '../ui/CurrencyDisplay';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useActionProgress } from '../../contexts/ActionProgressContext';
 import { useCompanyContext } from '../../contexts/CompanyContext';
 import { CreateInvoice } from './CreateInvoice';
 import { EditInvoice } from './EditInvoice';
-import { getTaxLabel, getTaxRegistrationLabel, validateTaxRegistration, getDefaultTaxRate, getClassificationCodeLabel, getCompanyTaxFields } from '../../utils/taxUtils';
+import { getTaxLabel, getTaxRegistrationLabel, getDefaultTaxRate, getClassificationCodeLabel, getCompanyTaxFields } from '../../utils/taxUtils';
 import { getPrimaryCustomerId } from '../../utils/customerCodeUtils';
-import type { Invoice, InvoiceFilters, InvoiceStats, Customer, Product, CompanySettings, InvoiceSettings, Country, CreateProductData, CreateCustomerData, CreateInvoiceData, CreateInvoiceItemData, TermsTemplate } from '../../types/invoice';
+import type { Invoice, InvoiceFilters, InvoiceStats, Customer, Product, CompanySettings, InvoiceSettings, Country, CreateInvoiceData, CreateInvoiceItemData, TermsTemplate } from '../../types/invoice';
 
-interface InvoiceManagementProps {
+export interface InvoiceManagementProps {
   onBackToDashboard?: () => void;
 }
 
@@ -49,7 +44,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [companySettings, setCompanySettings] = useState<CompanySettings[]>([]);
-  const [invoiceSettings, setInvoiceSettings] = useState<InvoiceSettings | null>(null);
+  const [, setInvoiceSettings] = useState<InvoiceSettings | null>(null);
   const [stats, setStats] = useState<InvoiceStats | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,14 +60,6 @@ const getBankingLabel = (company: CompanySettings | undefined | null): string =>
   const euCountries = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'GR', 'HU', 'IE', 'LV', 'LT', 'LU', 'MT', 'PL', 'PT', 'RO', 'SK', 'SI', 'SE', 'DE', 'FR', 'ES', 'IT', 'NL'];
   if (code && euCountries.includes(code)) return 'IBAN';
   return 'SWIFT/BIC';
-};
-
-const getBankingCodeField = (company: CompanySettings | undefined | null): keyof CompanySettings => {
-  if (!company) return 'ifsc_code';
-  const code = company.country_id?.toUpperCase();
-  if (code === 'IN' || code === 'IND') return 'ifsc_code';
-  if (code === 'US' || code === 'USA') return 'ifsc_code';
-  return 'ifsc_code';
 };
 
   // Mark as Paid dialog state
@@ -98,44 +85,7 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
     pathname === '/admin/invoices/new' ? 'create-invoice' :
     'dashboard';
   const [activeTab, setActiveTab] = useState<InvoiceTab>(tabFromPath(window.location.pathname));
-  
-  // Product modal states
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add'>('view');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [productFormData, setProductFormData] = useState<CreateProductData>({
-    name: '',
-    description: '',
-    product_code: '',
-    category: '',
-    unit_price: 0,
-    unit: '',
-    tax_rate: 18,
-    hsn_code: '',
-    is_active: true
-  });
   const [modalLoading, setModalLoading] = useState(false);
-
-  // Customer modal states
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [customerModalMode, setCustomerModalMode] = useState<'view' | 'edit' | 'add'>('view');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerFormData, setCustomerFormData] = useState<CreateCustomerData>({
-    company_name: '',
-    contact_person: '',
-    email: '',
-    phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    postal_code: '',
-    country_id: 'IN',
-    gstin: '',
-    pan: '',
-    credit_limit: 0,
-    payment_terms: 30
-  });
 
   // Invoice modal states
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -245,297 +195,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
     // Reset to page 1 when changing tabs
     setCurrentPage(1);
   }, [activeTab]);
-
-  // Product Modal Functions
-  const openProductModal = (mode: 'view' | 'edit' | 'add', product?: Product) => {
-    setModalMode(mode);
-    setSelectedProduct(product || null);
-    
-    if (mode === 'add') {
-      setProductFormData({
-        name: '',
-        description: '',
-        product_code: '',
-        category: '',
-        unit_price: 0,
-        unit: '',
-        tax_rate: 18,
-        hsn_code: '',
-        is_active: true
-      });
-    } else if (product) {
-      setProductFormData({
-        name: product.name,
-        description: product.description || '',
-        product_code: product.product_code || '',
-        category: product.category || '',
-        unit_price: product.unit_price,
-        unit: product.unit,
-        tax_rate: product.tax_rate,
-        hsn_code: product.hsn_code || '',
-        is_active: product.is_active
-      });
-    }
-    
-    setShowProductModal(true);
-  };
-
-  const closeProductModal = () => {
-    setShowProductModal(false);
-    setSelectedProduct(null);
-    setModalLoading(false);
-  };
-
-  const handleProductFormChange = (field: keyof CreateProductData, value: string | number | boolean) => {
-    setProductFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSaveProduct = async () => {
-    try {
-      setModalLoading(true);
-      
-      if (modalMode === 'add') {
-        await invoiceService.createProduct(productFormData);
-        showSuccess('Product created successfully!');
-      } else if (modalMode === 'edit' && selectedProduct) {
-        await invoiceService.updateProduct(selectedProduct.id, productFormData);
-        showSuccess('Product updated successfully!');
-      }
-      
-      closeProductModal();
-      await loadData(); // Refresh the product list
-    } catch (error) {
-      console.error('Failed to save product:', error);
-      showError(`Failed to save product: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleDeleteProduct = async (product: Product) => {
-    const confirmed = await confirm({
-      title: 'Delete Product',
-      message: `Are you sure you want to delete "${product.name}"?\n\nThis action cannot be undone.`,
-      confirmText: 'Delete',
-      type: 'danger'
-    });
-    
-    if (confirmed) {
-      startAction('Deleting product…');
-      try {
-        await invoiceService.deleteProduct(product.id);
-        showSuccess('Product deleted successfully!');
-        await loadData(); // Refresh the product list
-      } catch (error) {
-        console.error('Failed to delete product:', error);
-        showError(`Failed to delete product: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      } finally {
-        endAction();
-      }
-    }
-  };
-
-  // Customer Modal Functions
-  const openCustomerModal = (mode: 'view' | 'edit' | 'add', customer?: Customer) => {
-    console.log('🏢 Opening customer modal:', { mode, customer: customer?.id });
-    setCustomerModalMode(mode);
-    setSelectedCustomer(customer || null);
-    
-    if (mode === 'add') {
-      setCustomerFormData({
-        company_name: '',
-        contact_person: '',
-        email: '',
-        phone: '',
-        address_line1: '',
-        address_line2: '',
-        city: '',
-        state: '',
-        postal_code: '',
-        country_id: 'IN',
-        gstin: '',
-        pan: '',
-        credit_limit: 0,
-        payment_terms: 30
-      });
-    } else if (customer) {
-      setCustomerFormData({
-        company_name: customer.company_name || '',
-        contact_person: customer.contact_person || '',
-        email: customer.email || '',
-        phone: customer.phone || '',
-        address_line1: customer.address_line1 || '',
-        address_line2: customer.address_line2 || '',
-        city: customer.city || '',
-        state: customer.state || '',
-        postal_code: customer.postal_code || '',
-        country_id: customer.country_id || 'IN',
-        gstin: customer.gstin || '',
-        pan: customer.pan || '',
-        credit_limit: Number(customer.credit_limit) || 0,
-        payment_terms: Number(customer.payment_terms) || 30
-      });
-    }
-    
-    setShowCustomerModal(true);
-  };
-
-  const closeCustomerModal = () => {
-    setShowCustomerModal(false);
-    setSelectedCustomer(null);
-    setModalLoading(false);
-  };
-
-  const handleCustomerFormChange = (field: keyof CreateCustomerData, value: string | number) => {
-    setCustomerFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Customer form validation
-  const validateCustomerForm = () => {
-    const errors: string[] = [];
-    
-    // At least one identifier should be provided
-    if (!(customerFormData.company_name || '').trim() && !(customerFormData.contact_person || '').trim()) {
-      errors.push('Either Company Name or Contact Person is required');
-    }
-    
-    // Email validation
-    if ((customerFormData.email || '').trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(customerFormData.email || '')) {
-        errors.push('Please enter a valid email address');
-      }
-    }
-    
-    // Phone validation (basic)
-    if ((customerFormData.phone || '').trim()) {
-      const phoneRegex = /^[+]?[1-9][\d]{3,14}$/;
-      if (!phoneRegex.test((customerFormData.phone || '').replace(/[\s\-()]/g, ''))) {
-        errors.push('Please enter a valid phone number');
-      }
-    }
-    
-    // Tax registration validation (GSTIN/VAT Number)
-    if ((customerFormData.gstin || '').trim()) {
-      const selectedCustomer = customers.find(c => c.id === customerFormData.country_id) || 
-                               { country: countries.find(country => country.id === customerFormData.country_id) } as Customer;
-      const taxValidation = validateTaxRegistration(customerFormData.gstin || '', selectedCustomer);
-      if (!taxValidation.isValid && taxValidation.error) {
-        errors.push(taxValidation.error);
-      }
-    }
-    
-    // PAN validation
-    if ((customerFormData.pan || '').trim()) {
-      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-      if (!panRegex.test(customerFormData.pan || '')) {
-        errors.push('Please enter a valid PAN (10 characters: ABCDE1234F)');
-      }
-    }
-    
-    // Postal code validation (basic)
-    if ((customerFormData.postal_code || '').trim()) {
-      const postalRegex = /^[A-Z0-9\s-]{3,10}$/i;
-      if (!postalRegex.test(customerFormData.postal_code || '')) {
-        errors.push('Please enter a valid postal code');
-      }
-    }
-    
-    return errors;
-  };
-
-  const handleSaveCustomer = async () => {
-    try {
-      setModalLoading(true);
-      
-      // Validate form
-      const validationErrors = validateCustomerForm();
-      if (validationErrors.length > 0) {
-        showError(`Please fix the following errors:\n• ${validationErrors.join('\n• ')}`);
-        return;
-      }
-      
-      console.log('💾 Saving customer:', { mode: customerModalMode, data: customerFormData });
-      
-      if (customerModalMode === 'add') {
-        const result = await invoiceService.createCustomer(customerFormData);
-        console.log('✅ Customer created:', result);
-        console.log('🏁 Customer country relationship:', {
-          customer_id: result.id,
-          country_id: result.country_id,
-          country: result.country,
-          currency_code: result.country?.currency_code,
-          currency_symbol: result.country?.currency_symbol,
-          currency_name: result.country?.currency_name
-        });
-        
-        // Add the new customer to the existing customers list to avoid full reload
-        // This ensures the country relationship is preserved
-        setCustomers(prev => [result, ...prev]);
-        
-        showSuccess('Customer created successfully!');
-      } else if (customerModalMode === 'edit' && selectedCustomer) {
-        const result = await invoiceService.updateCustomer(selectedCustomer.id, customerFormData);
-        console.log('✅ Customer updated:', result);
-        console.log('🏁 Updated customer country relationship:', {
-          customer_id: result.id,
-          country_id: result.country_id,
-          country: result.country,
-          currency_code: result.country?.currency_code,
-          currency_symbol: result.country?.currency_symbol,
-          currency_name: result.country?.currency_name
-        });
-        
-        // Update the specific customer in the list
-        setCustomers(prev => prev.map(customer => 
-          customer.id === selectedCustomer.id ? result : customer
-        ));
-        
-        showSuccess('Customer updated successfully!');
-      }
-      
-      closeCustomerModal();
-      // Only reload data after saving customer
-        await loadData();
-    } catch (error) {
-      console.error('Failed to save customer:', error);
-      showError(`Failed to save customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleDeleteCustomer = async (customer: Customer) => {
-    console.log('🗑️ Delete customer requested:', customer);
-    const confirmed = await confirm({
-      title: 'Delete Customer',
-      message: `Are you sure you want to delete "${customer.company_name || customer.contact_person}"?\n\nThis action cannot be undone.`,
-      confirmText: 'Delete',
-      type: 'danger'
-    });
-    
-    if (confirmed) {
-      startAction('Deleting customer…');
-      try {
-        console.log('🗑️ Deleting customer:', customer.id);
-        await invoiceService.deleteCustomer(customer.id);
-        console.log('✅ Customer deleted successfully');
-        showSuccess('Customer deleted successfully!');
-        await loadData();
-      } catch (error) {
-        console.error('❌ Failed to delete customer:', error);
-        showError(`Failed to delete customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      } finally {
-        endAction();
-      }
-    }
-  };
 
   // Invoice Modal Functions
   const openCreateInvoiceTab = async (preselectedCustomerId?: string) => {
@@ -1836,7 +1495,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
         fromYPos += websiteLines.length * 4;
       }
       
-      const companyWithCountry = { country: company.country } as Customer;
       const taxFields = getCompanyTaxFields(company.country?.code);
       taxFields.fields.forEach((field) => {
         const value = company[field.key as keyof CompanySettings] as string | undefined;
@@ -2923,7 +2581,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
         fromYPos += websiteLines.length * 4;
       }
       
-      const companyWithCountry = { country: company.country } as Customer;
       const taxFields = getCompanyTaxFields(company.country?.code);
       taxFields.fields.forEach((field) => {
         const value = company[field.key as keyof CompanySettings] as string | undefined;
@@ -3996,7 +3653,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
       }
 
       if (payments && payments.length > 0) {
-        const completedPayment = payments[0];
         showInfo('💳 Found completed payment - updating invoice status...');
 
         // Update invoice status to paid
@@ -4331,14 +3987,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
     };
   };
 
-  const getPaidAmount = (invoice: Invoice) => {
-    return getInvoicePaidInfo(invoice).amount;
-  };
-
-  const getInrPaidAmount = (invoice: Invoice) => {
-    return getInvoicePaidInfo(invoice).amount;
-  };
-
   const renderInvoiceTable = (invoiceList: Invoice[] = invoices) => (
     <table className="min-w-full divide-y divide-gray-200 text-xs">
       <thead className="bg-gray-50">
@@ -4457,6 +4105,17 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
                     title="Email Invoice"
                   >
                     <Mail className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Create Payment Request */}
+                {invoice.status !== 'cancelled' && invoice.payment_status !== 'paid' && (
+                  <button 
+                    onClick={() => handleCreatePaymentRequest(invoice)}
+                    className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded transition"
+                    title="Create Payment Request"
+                  >
+                    <CreditCard className="w-4 h-4" />
                   </button>
                 )}
 
@@ -4607,6 +4266,21 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
          <h2 className="text-2xl font-bold text-gray-900">Invoices</h2>
          <div className="mt-4 sm:mt-0 flex gap-2">
            <button
+             onClick={() => {
+               const unpaid = invoices.filter(inv => inv.payment_status !== 'paid');
+               if (unpaid.length > 0) {
+                 unpaid.forEach(inv => handleSyncPaymentStatus(inv));
+               } else {
+                 showInfo('All invoices are already marked as paid.');
+               }
+             }}
+             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+             title="Sync payment statuses from gateways"
+           >
+             <RefreshCw className="w-4 h-4 mr-2" />
+             Sync Payments
+           </button>
+           <button
              onClick={handleGenerateDraftInvoices}
              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
            >
@@ -4707,372 +4381,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
     </div>
   );
 
-  const renderCustomers = () => (
-    <div className="space-y-6">
-      {/* Header with Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Customers</h2>
-        <div className="mt-4 sm:mt-0">
-          <button 
-            onClick={() => openCustomerModal('add')}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Customer
-          </button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search customers by name, email, or company..."
-          />
-        </form>
-      </div>
-
-      {/* Customers Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading customers...</p>
-          </div>
-        )}
-        
-        {!loading && customers.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Customers Found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm ? 'No customers match your search criteria.' : 'No customers are available. Create your first customer to get started.'}
-            </p>
-            {!searchTerm && (
-              <button 
-                onClick={() => openCustomerModal('add')}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Customer
-              </button>
-            )}
-          </div>
-        )}
-
-        {!loading && customers.length > 0 && (
-          <>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Credit Limit
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {customer.company_name || customer.contact_person}
-                    </div>
-                    {customer.company_name && customer.contact_person && (
-                      <div className="text-sm text-gray-500">{customer.contact_person}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{customer.email}</div>
-                    <div className="text-sm text-gray-500">{customer.phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {customer.city}, {customer.state}
-                    </div>
-                    <div className="text-sm text-gray-500">{customer.postal_code}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {formatCurrency(customer.credit_limit || 0)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      customer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {customer.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button 
-                        onClick={() => openCustomerModal('view', customer)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View Customer"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => openCustomerModal('edit', customer)}
-                        className="text-gray-600 hover:text-gray-900"
-                        title="Edit Customer"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCustomer(customer)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete Customer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
-        )}
-        
-        {/* Pagination */}
-        {!loading && customers.length > 0 && totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderProducts = () => (
-    <div className="space-y-6">
-      {/* Header with Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Products & Services</h2>
-        <div className="mt-4 sm:mt-0 flex space-x-2">
-          <button 
-            onClick={() => loadData()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </button>
-          <button 
-            onClick={() => openProductModal('add')}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search products..."
-          />
-        </div>
-      </div>
-
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading products...</p>
-          </div>
-        )}
-        
-        {!loading && products.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Products Found</h3>
-            <p className="text-gray-500 mb-4">No products are available in the database. Create your first product to get started.</p>
-            <button 
-              onClick={() => openProductModal('add')}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </button>
-          </div>
-        )}
-
-        {!loading && products.length > 0 && (
-          <>
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <p className="text-sm text-gray-600">
-                Showing {products.length} product{products.length !== 1 ? 's' : ''} from database
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Unit Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tax Rate
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">{product.product_code}</div>
-                        {product.description && (
-                          <div className="text-xs text-gray-400 mt-1">{product.description}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{product.category || 'N/A'}</div>
-                        {product.hsn_code && (
-                          <div className="text-xs text-gray-500">HSN: {product.hsn_code}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatCurrency(product.unit_price)} / {product.unit}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{product.tax_rate}%</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button 
-                            onClick={() => openProductModal('view', product)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="View Product"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => openProductModal('edit', product)}
-                            className="text-gray-600 hover:text-gray-900"
-                            title="Edit Product"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(product)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Delete Product"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {/* Pagination */}
-        {!loading && products.length > 0 && totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -5100,247 +4408,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
       </div>
     );
   }
-
-  // Product Modal Component
-  const renderProductModal = () => {
-    if (!showProductModal) return null;
-
-    const isReadOnly = modalMode === 'view';
-    const modalTitle = modalMode === 'add' ? 'Add New Product' : 
-                      modalMode === 'edit' ? 'Edit Product' : 'Product Details';
-
-    return (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-          {/* Modal Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-900">{modalTitle}</h3>
-            <button
-              onClick={closeProductModal}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* Modal Body */}
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Product Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  value={productFormData.name}
-                  onChange={(e) => handleProductFormChange('name', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="Enter product name"
-                />
-              </div>
-
-              {/* Product Code */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Code
-                </label>
-                <input
-                  type="text"
-                  value={productFormData.product_code}
-                  onChange={(e) => handleProductFormChange('product_code', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="Enter product code"
-                />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={productFormData.category}
-                  onChange={(e) => handleProductFormChange('category', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                >
-                  <option value="">Select category</option>
-                  <option value="Products">Products</option>
-                  <option value="Services">Services</option>
-                  <option value="Software">Software</option>
-                  <option value="Hardware">Hardware</option>
-                  <option value="Consulting">Consulting</option>
-                </select>
-              </div>
-
-              {/* Unit */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit *
-                </label>
-                <select
-                  value={productFormData.unit}
-                  onChange={(e) => handleProductFormChange('unit', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                >
-                  <option value="">Select unit</option>
-                  <option value="piece">Piece</option>
-                  <option value="project">Project</option>
-                  <option value="hour">Hour</option>
-                  <option value="day">Day</option>
-                  <option value="month">Month</option>
-                  <option value="year">Year</option>
-                  <option value="kg">Kilogram</option>
-                  <option value="liter">Liter</option>
-                </select>
-              </div>
-
-              {/* Unit Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit Price (₹) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={productFormData.unit_price}
-                  onChange={(e) => handleProductFormChange('unit_price', parseFloat(e.target.value) || 0)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* Tax Rate */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tax Rate (%) *
-                </label>
-                <select
-                  value={productFormData.tax_rate}
-                  onChange={(e) => handleProductFormChange('tax_rate', parseFloat(e.target.value) || 0)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                >
-                  <option value={0}>0% (Exempt)</option>
-                  <option value={5}>5%</option>
-                  <option value={12}>12%</option>
-                  <option value={18}>18%</option>
-                  <option value={28}>28%</option>
-                </select>
-              </div>
-
-              {/* HSN Code */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  HSN Code
-                </label>
-                <input
-                  type="text"
-                  value={productFormData.hsn_code}
-                  onChange={(e) => handleProductFormChange('hsn_code', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="Enter HSN code"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={productFormData.description}
-                  onChange={(e) => handleProductFormChange('description', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                    isReadOnly ? 'bg-gray-50 text-gray-500' : ''
-                  }`}
-                  placeholder="Enter product description"
-                />
-              </div>
-
-              {/* Active Status */}
-              <div className="md:col-span-2">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="productActive"
-                    checked={productFormData.is_active ?? true}
-                    onChange={(e) => handleProductFormChange('is_active', e.target.checked)}
-                    disabled={isReadOnly}
-                    className={`h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 ${
-                      isReadOnly ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  />
-                  <label htmlFor="productActive" className={`ml-2 text-sm font-medium ${
-                    isReadOnly ? 'text-gray-500' : 'text-gray-700'
-                  }`}>
-                    Active Product
-                  </label>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  {productFormData.is_active ?? true 
-                    ? 'This product is available for selection in invoices' 
-                    : 'This product is hidden from invoice creation'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Modal Footer */}
-          <div className="flex justify-end space-x-3 mt-8">
-            <button
-              onClick={closeProductModal}
-              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md text-sm font-medium hover:from-red-600 hover:to-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              {isReadOnly ? 'Close' : 'Cancel'}
-            </button>
-            {!isReadOnly && (
-              <button
-                onClick={handleSaveProduct}
-                disabled={modalLoading || !productFormData.name || !productFormData.unit}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {modalLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Product
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Invoice Preview Content Function
   const renderInvoicePreviewContent = () => {
@@ -5705,7 +4772,18 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
        <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">Invoice Management</h1>
+            <div className="flex items-center space-x-3">
+              {onBackToDashboard && (
+                <button
+                  onClick={onBackToDashboard}
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  title="Back to Dashboard"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+              )}
+              <h1 className="text-xl font-semibold text-gray-900">Invoice Management</h1>
+            </div>
           </div>
         </div>
       </header>
@@ -5771,304 +4849,6 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
         )}
       </main>
 
-      {/* Product Modal */}
-      {renderProductModal()}
-      
-      {/* Customer Modal */}
-      {showCustomerModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                {customerModalMode === 'view' ? 'Customer Details' : 
-                 customerModalMode === 'edit' ? 'Edit Customer' : 'Add Customer'}
-              </h3>
-              <button
-                onClick={closeCustomerModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.company_name}
-                    onChange={(e) => handleCustomerFormChange('company_name', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter company name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contact Person
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.contact_person}
-                    onChange={(e) => handleCustomerFormChange('contact_person', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter contact person name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={customerFormData.email}
-                    onChange={(e) => handleCustomerFormChange('email', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter email address"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={customerFormData.phone}
-                    onChange={(e) => handleCustomerFormChange('phone', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address Line 1
-                </label>
-                <input
-                  type="text"
-                  value={customerFormData.address_line1}
-                  onChange={(e) => handleCustomerFormChange('address_line1', e.target.value)}
-                  disabled={customerModalMode === 'view'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                  placeholder="Enter street address"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address Line 2
-                </label>
-                <input
-                  type="text"
-                  value={customerFormData.address_line2}
-                  onChange={(e) => handleCustomerFormChange('address_line2', e.target.value)}
-                  disabled={customerModalMode === 'view'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                  placeholder="Apartment, suite, etc. (optional)"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.city}
-                    onChange={(e) => handleCustomerFormChange('city', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter city"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.state}
-                    onChange={(e) => handleCustomerFormChange('state', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter state/province"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.postal_code}
-                    onChange={(e) => handleCustomerFormChange('postal_code', e.target.value)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter postal code"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <select
-                  value={customerFormData.country_id}
-                  onChange={(e) => handleCustomerFormChange('country_id', e.target.value)}
-                  disabled={customerModalMode === 'view'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                >
-                  <option value="">Select Country</option>
-                  {countries.map(country => (
-                    <option key={country.id} value={country.id}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  {(() => {
-                    // Get selected country for dynamic labels
-                    const selectedCountry = countries.find(c => c.id === customerFormData.country_id);
-                    const customerWithCountry = { country: selectedCountry } as Customer;
-                    const taxRegLabel = getTaxRegistrationLabel(customerWithCountry);
-                    const isIGST = getTaxLabel(customerWithCountry) === 'IGST';
-                    
-                    return (
-                      <>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {taxRegLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={customerFormData.gstin}
-                          onChange={(e) => handleCustomerFormChange('gstin', e.target.value.toUpperCase())}
-                          disabled={customerModalMode === 'view'}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                          placeholder={isIGST ? "e.g., 22AAAAA0000A1Z5" : "e.g., VAT123456789"}
-                          pattern={isIGST ? "[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}" : undefined}
-                          maxLength={isIGST ? 15 : 20}
-                        />
-                      </>
-                    );
-                  })()}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    PAN
-                  </label>
-                  <input
-                    type="text"
-                    value={customerFormData.pan}
-                    onChange={(e) => handleCustomerFormChange('pan', e.target.value.toUpperCase())}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="e.g., ABCDE1234F"
-                    pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Credit Limit (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={customerFormData.credit_limit}
-                    onChange={(e) => handleCustomerFormChange('credit_limit', parseFloat(e.target.value) || 0)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="Enter credit limit"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Terms (Days)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="365"
-                    value={customerFormData.payment_terms}
-                    onChange={(e) => handleCustomerFormChange('payment_terms', parseInt(e.target.value) || 30)}
-                    disabled={customerModalMode === 'view'}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                    placeholder="e.g., 30"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {customerModalMode !== 'view' && (
-              <>
-                {/* Validation Guidelines */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">📋 Form Guidelines & International Policies:</h4>
-                  <ul className="text-xs text-blue-800 space-y-1">
-                    <li>• <strong>Required Fields:</strong> Either Company Name or Contact Person is mandatory</li>
-                    <li>• <strong>Email Validation:</strong> Valid email format required if provided</li>
-                    <li>• <strong>India (IGST):</strong> GSTIN: 15 chars (e.g., 22AAAAA0000A1Z5), PAN: 10 chars (e.g., ABCDE1234F)</li>
-                    <li>• <strong>USA:</strong> Federal Tax ID/EIN format required for business customers</li>
-                    <li>• <strong>UK:</strong> VAT number format validation for VAT-registered entities</li>
-                    <li>• <strong>EU:</strong> EU VAT ID format compliance for cross-border transactions</li>
-                    <li>• <strong>Canada:</strong> IGST/HST number format validation for registered businesses</li>
-                    <li>• <strong>Australia:</strong> ABN (Australian Business Number) format verification</li>
-                    <li>• <strong>Singapore:</strong> UEN (Unique Entity Number) format for business registration</li>
-                    <li>• <strong>UAE:</strong> TRN (Tax Registration Number) format for VAT compliance</li>
-                    <li>• <strong>Global Policy:</strong> All tax IDs auto-validated based on selected country</li>
-                    <li>• <strong>Data Privacy:</strong> Customer data handled per GDPR, CCPA, and local regulations</li>
-                  </ul>
-                </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={closeCustomerModal}
-                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md text-sm font-medium hover:from-red-600 hover:to-red-700 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveCustomer}
-                  disabled={modalLoading}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                >
-                   {modalLoading ? (
-                     <>
-                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                       Saving...
-                     </>
-                   ) : 'Save Customer'}
-                </button>
-              </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      
       {/* Invoice Modal */}
       {showInvoiceModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">

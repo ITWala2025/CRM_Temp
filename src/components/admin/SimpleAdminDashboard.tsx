@@ -7,30 +7,17 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  Menu,
-  X,
-  Plus,
-  Users,
   TrendingUp,
   RefreshCw,
-  DollarSign,
   Calculator,
   Wallet,
   BarChart3,
   LayoutDashboard,
   Settings,
-  Mail,
-  UserCheck,
   Compass,
-  ArrowUpRight,
-  ArrowDownRight,
   Building2,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
   FileSignature,
   Bot,
-  Sparkles,
 } from 'lucide-react';
 import AgentCopilotCenter from './AgentCopilotCenter';
 import { simpleAuth, SimpleUser } from '../../utils/simpleAuth';
@@ -52,8 +39,8 @@ import type { ExpenseStats } from '../../services/expenseService';
 import type { CustomerActivityTimelineItem } from '../../types/customer360';
 
 // Lazy loaded CRM modules
-const InvoiceManagement = lazy(() => import('../invoice/InvoiceManagement'));
-const QuoteManagement = lazy(() => import('../quote/QuoteManagement'));
+const InvoiceManagement = lazy<React.ComponentType<{ onBackToDashboard?: () => void }>>(() => import('../invoice/InvoiceManagement'));
+const QuoteManagement = lazy<React.ComponentType<{ onBackToDashboard?: () => void }>>(() => import('../quote/QuoteManagement'));
 const ContractManagement = lazy(() => import('../contract/ContractManagement'));
 const CustomerManagement = lazy(() => import('../customer/CustomerManagement'));
 const Customer360Hub = lazy(() => import('../customer/Customer360Hub').then((m) => ({ default: m.Customer360Hub })));
@@ -94,7 +81,7 @@ export const SimpleAdminDashboard: React.FC = () => {
   const [quoteStats, setQuoteStats] = useState<QuoteStats | null>(null);
   const [contractStats, setContractStats] = useState<ContractStatistics | null>(null);
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
-  const [expenseStats, setExpenseStats] = useState<ExpenseStats | null>(null);
+  const [, setExpenseStats] = useState<ExpenseStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [recentTimeline, setRecentTimeline] = useState<CustomerActivityTimelineItem[]>([]);
   const [isAgentCenterOpen, setIsAgentCenterOpen] = useState(false);
@@ -770,7 +757,7 @@ export const SimpleAdminDashboard: React.FC = () => {
       <AgentCopilotCenter
         isOpen={isAgentCenterOpen}
         onClose={() => setIsAgentCenterOpen(false)}
-        onNavigateToEntity={(entityType) => {
+        onNavigateToEntity={(entityType: string) => {
           setIsAgentCenterOpen(false);
           if (entityType === 'invoice') navigate('/admin/invoices');
           else if (entityType === 'quote') navigate('/admin/quotes');
