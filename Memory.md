@@ -137,3 +137,12 @@ To prevent client corruption during rapid iterative prototyping or client demons
    ```
 3. **Data Integrity Guard**: On boot, `mockStore.initialize()` validates the stored JSON structure. If corrupt or from an obsolete schema version, it gracefully resets to default seed data without crashing the UI.
 
+---
+
+## 6. Routing Architecture & RBAC Subsystem
+
+- **Primary Route Prefix**: `/crm` (all modules route via `/crm`, `/crm/invoices`, `/crm/invoices/new`, `/crm/invoices/list`, `/crm/quotes`, `/crm/roles`, etc.).
+- **Legacy Compatibility**: `/admin/*` routes transparently alias and map to the active CRM views.
+- **RBAC Role Management**: Integrated directly at `src/components/admin/roles/` mirroring the granular permission matrix from `kdadks` (`RoleListTab`, `RoleAccessMatrixTab`, `UserAssignmentsTab`, `RoleAuditLogTab`, `RoleModal`, `UserAssignmentModal`). Accessible via `/crm/roles`.
+- **Terms Templates Offline Memory**: Default Ireland & EU B2B terms stored in `terms_templates` key in `template_crm_data_v2`, guaranteeing seamless invoice creation when Supabase is disconnected.
+
