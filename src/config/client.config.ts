@@ -44,9 +44,9 @@ export interface ClientConfig {
 
 export const clientConfig: ClientConfig = {
   clientId: 'client-master-template',
-  clientName: 'Enterprise CRM',
-  legalEntityName: 'Acme Enterprise Global Solutions Inc.',
-  tagline: 'Client Relationship & Revenue Management Platform',
+  clientName: 'Enterprise CRM Europe',
+  legalEntityName: 'Acme Cloud Technologies Ireland Limited',
+  tagline: 'European Operations & Client Revenue Management Platform',
   theme: {
     primaryColor: '#4f46e5', // Indigo-600
     primaryHover: '#4338ca', // Indigo-700
@@ -55,10 +55,10 @@ export const clientConfig: ClientConfig = {
     sidebarText: '#f8fafc',  // Slate-50
   },
   localization: {
-    defaultCurrency: 'USD',
-    locale: 'en-US',
-    taxSystem: 'SALES_TAX',
-    dateFormat: 'YYYY-MM-DD',
+    defaultCurrency: 'EUR',
+    locale: 'en-IE',
+    taxSystem: 'VAT',
+    dateFormat: 'DD/MM/YYYY',
   },
   activeModules: {
     dashboard: true,

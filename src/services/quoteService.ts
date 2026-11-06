@@ -43,19 +43,26 @@ class QuoteService {
 
   // Quote Settings
   async getQuoteSettings(): Promise<QuoteSettings | null> {
-    if (isMockMode) {
+    if (isMockMode || !isSupabaseConfigured) {
+      const stored = mockStore.get<QuoteSettings>('quote_settings');
+      if (stored && !Array.isArray(stored)) {
+        return stored;
+      }
       return {
-        id: 'qs-default',
-        quote_prefix: 'QTE-',
-        number_format: '{PREFIX}{YEAR}-{NUMBER}',
+        id: 'quote-settings-001',
+        quote_prefix: 'QTE/IRL/',
+        quote_suffix: '',
+        number_format: 'QTE/IRL/YYYY/XXXX',
         current_number: 104,
         reset_annually: true,
-        financial_year_start_month: 4,
-        current_financial_year: '2026-27',
+        financial_year_start_month: 1,
+        current_financial_year: '2026',
         validity_days: 30,
-        default_tax_rate: 18,
-        enable_gst: true,
-        template_name: 'modern',
+        notes: 'This quote is valid for 30 calendar days from issue date under Irish commercial terms.',
+        footer_text: 'Acme Cloud Technologies Ireland Limited • VAT ID: IE987654321A • Registered in Dublin, Ireland',
+        default_tax_rate: 23,
+        enable_gst: false,
+        template_name: 'standard',
         currency_position: 'before',
         is_active: true,
         created_at: new Date().toISOString(),
@@ -118,11 +125,15 @@ class QuoteService {
     
     let nextSequentialNumber = settings.current_number;
     
-    const { count: quoteCount } = await supabase
-      .from('quotes')
-      .select('*', { count: 'exact', head: true });
-    
-    const actualQuoteCount = quoteCount || 0;
+    let actualQuoteCount = 0;
+    if (isMockMode || !isSupabaseConfigured) {
+      actualQuoteCount = mockStore.get<Quote>('quotes').length;
+    } else {
+      const { count: quoteCount } = await supabase
+        .from('quotes')
+        .select('*', { count: 'exact', head: true });
+      actualQuoteCount = quoteCount || 0;
+    }
     
     if (actualQuoteCount === 0) {
       nextSequentialNumber = 1;
@@ -167,11 +178,15 @@ class QuoteService {
     
     let nextSequentialNumber = settings.current_number;
     
-    const { count: quoteCount } = await supabase
-      .from('quotes')
-      .select('*', { count: 'exact', head: true });
-    
-    const actualQuoteCount = quoteCount || 0;
+    let actualQuoteCount = 0;
+    if (isMockMode || !isSupabaseConfigured) {
+      actualQuoteCount = mockStore.get<Quote>('quotes').length;
+    } else {
+      const { count: quoteCount } = await supabase
+        .from('quotes')
+        .select('*', { count: 'exact', head: true });
+      actualQuoteCount = quoteCount || 0;
+    }
     
     if (actualQuoteCount === 0) {
       nextSequentialNumber = 1;
@@ -330,6 +345,81 @@ class QuoteService {
       finalQuoteNumber = quoteNumber;
     } else {
       finalQuoteNumber = await this.generateQuoteNumber();
+    }
+
+    if (isMockMode || !isSupabaseConfigured) {
+      const customers = mockStore.get<Customer>('customers');
+      const foundCustomer = customers.find(c => c.id === quoteData.customer_id) || customers[0];
+      const companies = mockStore.get<CompanySettings>('company_settings');
+      const targetCompany = (companySettingsId && companies.find(c => c.id === companySettingsId))
+        || companies.find(c => c.is_default)
+        || companies[0];
+
+      let subtotal = 0;
+      let taxAmount = 0;
+      const quoteItems: QuoteItem[] = (quoteData.items || []).map((item, idx) => {
+        const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
+        const itemTax = (lineTotal * (item.tax_rate ?? 23)) / 100;
+        subtotal += lineTotal;
+        taxAmount += itemTax;
+        return {
+          id: `qitem-${Date.now()}-${idx}`,
+          quote_id: '',
+          item_name: item.item_name || 'Service Item',
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          unit: item.unit || 'Month',
+          unit_price: item.unit_price || 0,
+          line_total: lineTotal,
+          tax_rate: item.tax_rate ?? 23,
+          tax_amount: itemTax,
+          created_at: new Date().toISOString(),
+        };
+      });
+
+      let discountAmount = 0;
+      if (quoteData.discount_type && quoteData.discount_value) {
+        if (quoteData.discount_type === 'percentage') {
+          discountAmount = (subtotal * quoteData.discount_value) / 100;
+        } else {
+          discountAmount = quoteData.discount_value;
+        }
+      }
+      const discountedSubtotal = subtotal - discountAmount;
+      const averageTaxRate = taxAmount > 0 ? (taxAmount / (subtotal || 1)) * 100 : 23;
+      const adjustedTaxAmount = (discountedSubtotal * averageTaxRate) / 100;
+      const totalAmount = discountedSubtotal + adjustedTaxAmount;
+
+      const currencyCode = foundCustomer?.country?.currency_code || targetCompany?.country?.currency_code || 'EUR';
+
+      const newQuote: Quote = {
+        id: `quote-${Date.now()}`,
+        quote_number: finalQuoteNumber,
+        customer_id: foundCustomer?.id || quoteData.customer_id,
+        customer: foundCustomer,
+        company_settings_id: targetCompany?.id || 'comp-irl-002',
+        company_settings: targetCompany,
+        project_title: quoteData.project_title,
+        quote_date: quoteData.quote_date,
+        valid_until: quoteData.valid_until,
+        subtotal,
+        discount_amount: discountAmount,
+        discount_type: quoteData.discount_type || undefined,
+        discount_value: quoteData.discount_value || undefined,
+        tax_amount: adjustedTaxAmount,
+        total_amount: totalAmount,
+        currency_code: currencyCode,
+        status: 'draft',
+        notes: quoteData.notes || '',
+        terms_conditions: quoteData.terms_conditions || '',
+        quote_items: quoteItems,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      newQuote.quote_items?.forEach(it => { it.quote_id = newQuote.id; });
+
+      mockStore.insert<Quote>('quotes', newQuote);
+      return newQuote;
     }
     
     let companySettings = null;
@@ -525,6 +615,18 @@ class QuoteService {
   }
 
   async updateQuote(id: string, quoteData: UpdateQuoteData): Promise<Quote> {
+    if (isMockMode || !isSupabaseConfigured) {
+      const existing = mockStore.get<Quote>('quotes').find(q => q.id === id);
+      if (!existing) throw new Error('Quote not found');
+      const updated = {
+        ...existing,
+        ...quoteData,
+        updated_at: new Date().toISOString(),
+      };
+      mockStore.update<Quote>('quotes', id, updated);
+      return updated as Quote;
+    }
+
     // First update the basic quote fields
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
@@ -780,6 +882,14 @@ class QuoteService {
   }
 
   async updateQuoteStatus(id: string, status: Quote['status']): Promise<Quote> {
+    if (isMockMode || !isSupabaseConfigured) {
+      const quote = mockStore.get<Quote>('quotes').find(q => q.id === id);
+      if (!quote) throw new Error('Quote not found');
+      const updated = { ...quote, status, updated_at: new Date().toISOString() };
+      mockStore.update<Quote>('quotes', id, updated);
+      return updated;
+    }
+
     const { data, error } = await supabase
       .from('quotes')
       .update({
@@ -809,6 +919,11 @@ class QuoteService {
   }
 
   async deleteQuote(id: string): Promise<void> {
+    if (isMockMode || !isSupabaseConfigured) {
+      mockStore.delete('quotes', id);
+      return;
+    }
+
     // Get current user for authentication check
     const currentUser = await simpleAuth.getCurrentUser();
     if (!currentUser) {
@@ -898,6 +1013,21 @@ class QuoteService {
     };
 
     const invoice = await invoiceService.createInvoice(invoiceData, undefined, quote.company_settings_id);
+
+    if (isMockMode || !isSupabaseConfigured) {
+      const updated = {
+        ...quote,
+        status: 'converted' as const,
+        converted_to_invoice_id: invoice.id,
+        converted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      mockStore.update<Quote>('quotes', quote.id, updated);
+      return {
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoice_number,
+      };
+    }
 
     // Update quote status to converted
     await supabase

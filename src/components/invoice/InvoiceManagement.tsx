@@ -938,18 +938,20 @@ const getBankingCodeField = (company: CompanySettings | undefined | null): keyof
         case 'ITA':
         case 'ESP':
         case 'NLD':
+        case 'IRL':
+        case 'IE':
           return { symbol: '€', name: 'Euros', code: 'EUR' };
         default:
           break;
       }
     }
     
-    // Default to Indian Rupee
-    console.log('🔄 Using default currency (INR) - no country found or no currency data');
+    // Default to Euro
+    console.log('🔄 Using default currency (EUR) - no country found or no currency data');
     return {
-      symbol: '₹',
-      name: 'Rupees',
-      code: 'INR'
+      symbol: '€',
+      name: 'Euros',
+      code: 'EUR'
     };
   };
 

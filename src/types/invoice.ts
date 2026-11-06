@@ -140,6 +140,8 @@ export interface Customer {
   // IGST Information (if applicable)
   gstin?: string;
   pan?: string;
+  vat_number?: string;
+  cro_number?: string;
   
   // Authentication & Credentials (Web Crypto PBKDF2)
   password_hash?: string | null;
@@ -298,6 +300,7 @@ export interface Invoice {
   customer?: Customer;
   company_settings?: CompanySettings;
   invoice_items?: InvoiceItem[];
+  items?: InvoiceItem[];
   payments?: Payment[];
 }
 

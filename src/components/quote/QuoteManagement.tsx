@@ -364,9 +364,9 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     }
     
     return {
-      symbol: '₹',
-      name: 'Rupees',
-      code: 'INR'
+      symbol: '€',
+      name: 'Euros',
+      code: 'EUR'
     };
   };
 

@@ -97,7 +97,7 @@ class ContractService {
     const year = new Date().getFullYear();
     const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
 
-    let entity = 'IND';
+    let entity = 'IRL';
     if (entityPrefix) {
       const up = entityPrefix.toUpperCase();
       if (up === 'IRL' || up === 'IE') {
@@ -248,7 +248,7 @@ class ContractService {
       contract_title: template.contract_title || template.template_name,
       description: template.description || '',
       entity_law: template.entity_law || 'ALL',
-      currency_code: template.currency_code || 'INR',
+      currency_code: template.currency_code || 'EUR',
       preamble: template.preamble || '',
       is_active: template.is_active !== undefined ? template.is_active : true,
       is_custom: true,
@@ -350,7 +350,7 @@ class ContractService {
         effective_date: contractData.effective_date,
         expiry_date: contractData.expiry_date,
         contract_value: contractData.contract_value || 0,
-        currency_code: contractData.currency_code || 'USD',
+        currency_code: contractData.currency_code || 'EUR',
         signed_by_party_a: false,
         signed_by_party_b: false,
         status: 'draft',
@@ -396,7 +396,7 @@ class ContractService {
       party_b_gstin: contractData.party_b_gstin ? String(contractData.party_b_gstin).substring(0, 15) : undefined,
       party_b_pan: contractData.party_b_pan ? String(contractData.party_b_pan).substring(0, 10) : undefined,
       contract_number: contractNumber,
-      currency_code: contractData.currency_code ? String(contractData.currency_code).substring(0, 5) : 'INR',
+      currency_code: contractData.currency_code ? String(contractData.currency_code).substring(0, 5) : 'EUR',
       status: 'draft',
       signed_by_party_a: false,
       signed_by_party_b: false,
@@ -856,7 +856,7 @@ class ContractService {
   /**
    * Get contract statistics with values converted to target currency (INR for IND entity, EUR for IRL entity)
    */
-  async getStatistics(companySettingsId?: string, targetCurrency: string = 'INR'): Promise<ContractStatistics> {
+  async getStatistics(companySettingsId?: string, targetCurrency: string = 'EUR'): Promise<ContractStatistics> {
     if (isMockMode || !isSupabaseConfigured) {
       let contracts = mockStore.get<Contract>('contracts');
       if (companySettingsId) {

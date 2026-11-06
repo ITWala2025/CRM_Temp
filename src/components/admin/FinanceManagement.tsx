@@ -37,7 +37,7 @@ const sourceColors: Record<string, { bg: string; text: string; icon: React.Compo
 };
 
 export const getCompanyCurrency = (comp: CompanySettings | null): string => {
-  if (!comp) return 'INR';
+  if (!comp) return 'EUR';
   if (comp.country?.currency_code) return comp.country.currency_code;
   const cCode = comp.country?.code?.toUpperCase();
   if (cCode === 'IE' || cCode === 'IRL') return 'EUR';
@@ -45,11 +45,11 @@ export const getCompanyCurrency = (comp: CompanySettings | null): string => {
   if (cCode === 'US' || cCode === 'USA') return 'USD';
   if (cCode === 'GB' || cCode === 'GBR') return 'GBP';
   if (cCode === 'AE' || cCode === 'ARE') return 'AED';
-  return 'INR';
+  return 'EUR';
 };
 
-const formatCurrency = (amount: number, currencyCode: string = 'INR') => {
-  const code = (currencyCode || 'INR').toUpperCase();
+const formatCurrency = (amount: number, currencyCode: string = 'EUR') => {
+  const code = (currencyCode || 'EUR').toUpperCase();
   const localeMap: Record<string, string> = {
     INR: 'en-IN',
     EUR: 'en-IE',

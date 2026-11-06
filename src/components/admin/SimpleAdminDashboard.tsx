@@ -122,7 +122,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
   const currencySymbol =
     selectedCompany?.country?.currency_symbol ||
-    (selectedCompany?.country?.code === 'IRL' ? '€' : selectedCompany?.country?.code === 'USA' ? '$' : '₹');
+    (selectedCompany?.country?.code === 'USA' ? '$' : selectedCompany?.country?.code === 'IND' ? '₹' : '€');
 
   const formatCurrency = (amount: number) => {
     return `${currencySymbol}${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

@@ -474,7 +474,7 @@ const CreateContractModal: React.FC<CreateContractModalProps> = ({ onSave, onClo
                     Currency *
                   </label>
                   <select
-                    value={formData.currency_code || 'INR'}
+                    value={formData.currency_code || 'EUR'}
                     onChange={(e) => handleInputChange('currency_code', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required

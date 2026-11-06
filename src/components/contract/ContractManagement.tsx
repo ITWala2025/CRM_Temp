@@ -71,7 +71,8 @@ const ContractManagement: React.FC = () => {
     contract_title: '',
     contract_date: new Date().toISOString().split('T')[0],
     effective_date: new Date().toISOString().split('T')[0],
-    currency_code: 'INR',
+    currency_code: 'EUR',
+    entity_prefix: 'IRL',
     sections: []
   });
   
@@ -114,7 +115,8 @@ const ContractManagement: React.FC = () => {
       const targetCurrencyCode = selectedCompany?.country?.currency_code || (
         selectedCompany?.country_id === 'IE' || selectedCompany?.country?.code === 'IE' || selectedCompany?.country?.code === 'IRL' ? 'EUR' :
         selectedCompany?.country_id === 'US' || selectedCompany?.country?.code === 'US' || selectedCompany?.country?.code === 'USA' ? 'USD' :
-        selectedCompany?.country_id === 'GB' || selectedCompany?.country_id === 'UK' || selectedCompany?.country?.code === 'GB' ? 'GBP' : 'INR'
+        selectedCompany?.country_id === 'GB' || selectedCompany?.country_id === 'UK' || selectedCompany?.country?.code === 'GB' ? 'GBP' :
+        selectedCompany?.country_id === 'IN' || selectedCompany?.country?.code === 'IN' || selectedCompany?.country?.code === 'IND' ? 'INR' : 'EUR'
       );
       const statsData = await contractService.getStatistics(selectedCompany?.id, targetCurrencyCode);
       setStats(statsData);
@@ -394,13 +396,14 @@ const ContractManagement: React.FC = () => {
   const entityCurrencyCode = selectedCompany?.country?.currency_code || (
     selectedCompany?.country_id === 'IE' || selectedCompany?.country?.code === 'IE' || selectedCompany?.country?.code === 'IRL' ? 'EUR' :
     selectedCompany?.country_id === 'US' || selectedCompany?.country?.code === 'US' || selectedCompany?.country?.code === 'USA' ? 'USD' :
-    selectedCompany?.country_id === 'GB' || selectedCompany?.country_id === 'UK' || selectedCompany?.country?.code === 'GB' ? 'GBP' : 'INR'
+    selectedCompany?.country_id === 'GB' || selectedCompany?.country_id === 'UK' || selectedCompany?.country?.code === 'GB' ? 'GBP' :
+    selectedCompany?.country_id === 'IN' || selectedCompany?.country?.code === 'IN' || selectedCompany?.country?.code === 'IND' ? 'INR' : 'EUR'
   );
 
   // Format currency
   const formatCurrency = (amount: number | undefined, currencyCode: string = entityCurrencyCode) => {
     if (amount === undefined || amount === null) return '-';
-    const locale = currencyCode === 'EUR' ? 'en-IE' : currencyCode === 'USD' ? 'en-US' : currencyCode === 'GBP' ? 'en-GB' : 'en-IN';
+    const locale = currencyCode === 'EUR' ? 'en-IE' : currencyCode === 'USD' ? 'en-US' : currencyCode === 'GBP' ? 'en-GB' : 'en-IE';
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currencyCode
@@ -410,7 +413,7 @@ const ContractManagement: React.FC = () => {
   // Format date
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('en-IN', {
+    return new Date(dateString).toLocaleDateString('en-IE', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

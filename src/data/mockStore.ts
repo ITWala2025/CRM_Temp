@@ -20,7 +20,7 @@ import {
   mockActivityTimeline,
 } from './mockData';
 
-const STORAGE_KEY = 'template_crm_data_v1';
+const STORAGE_KEY = 'template_crm_data_v2';
 
 export interface CRMStorageState {
   version: number;
@@ -47,7 +47,7 @@ export interface CRMStorageState {
 
 function getDefaultState(): CRMStorageState {
   return {
-    version: 1,
+    version: 2,
     countries: JSON.parse(JSON.stringify(mockCountries)),
     company_settings: JSON.parse(JSON.stringify(mockCompanySettings)),
     products: JSON.parse(JSON.stringify(mockProducts)),
@@ -82,7 +82,7 @@ class MockStore {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.version === 1) {
+        if (parsed.version === 2) {
           return parsed;
         }
       }

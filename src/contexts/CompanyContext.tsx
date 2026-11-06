@@ -34,15 +34,15 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (prev && data.some(c => c.id === prev.id)) {
           next = data.find(c => c.id === prev.id) || prev;
         } else {
-          const storedId = localStorage.getItem('kdadks_selected_company_id');
+          const storedId = localStorage.getItem('template_crm_selected_company_id');
           if (storedId && data.some(c => c.id === storedId)) {
             next = data.find(c => c.id === storedId) || null;
           } else {
-            next = data.find(c => c.is_default) || data[0] || null;
+            next = data.find(c => c.is_default) || data.find(c => c.id === 'comp-irl-002') || data[0] || null;
           }
         }
         if (next) {
-          localStorage.setItem('kdadks_selected_company_id', next.id);
+          localStorage.setItem('template_crm_selected_company_id', next.id);
         }
         if (prev && next && JSON.stringify(prev) === JSON.stringify(next)) {
           return prev;
@@ -66,7 +66,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       } else if (event === 'SIGNED_OUT') {
         setCompanies([]);
         setSelectedCompany(null);
-        localStorage.removeItem('kdadks_selected_company_id');
+        localStorage.removeItem('template_crm_selected_company_id');
       }
     });
 
@@ -79,9 +79,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     const found = companies.find(c => c.id === id) || null;
     setSelectedCompany(found);
     if (found) {
-      localStorage.setItem('kdadks_selected_company_id', found.id);
+      localStorage.setItem('template_crm_selected_company_id', found.id);
     } else {
-      localStorage.removeItem('kdadks_selected_company_id');
+      localStorage.removeItem('template_crm_selected_company_id');
     }
   };
 

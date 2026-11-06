@@ -358,7 +358,7 @@ export const financeService = {
             gross_amount: inv.total_amount || 0,
             tax_amount: inv.tax_amount || 0,
             net_amount: inv.subtotal || inv.total_amount || 0,
-            currency: inv.currency_code || 'USD',
+            currency: inv.currency_code || 'EUR',
             description: `Payment for Invoice ${inv.invoice_number}`,
             category: 'Invoice Revenue',
           });
@@ -375,7 +375,7 @@ export const financeService = {
           gross_amount: m.amount || 0,
           tax_amount: m.tax_amount || 0,
           net_amount: m.net_amount || m.amount || 0,
-          currency: m.currency || 'USD',
+          currency: m.currency || 'EUR',
           description: m.description || m.title,
           category: m.category || 'Other Income',
         });
@@ -676,7 +676,7 @@ export const financeService = {
         gross_amount: e.total_amount || e.amount || 0,
         tax_amount: e.tax_amount || 0,
         net_amount: e.amount || 0,
-        currency: e.currency || 'USD',
+        currency: e.currency || 'EUR',
         description: e.description || e.title,
         category: e.title || 'Operational Expense',
       }));

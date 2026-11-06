@@ -37,6 +37,7 @@ export const agentService = {
       if (quote.status === 'sent' && quote.valid_until) {
         const expiryDate = new Date(quote.valid_until);
         const diffDays = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const qCurr = quote.currency_code === 'EUR' ? '€' : quote.currency_code === 'INR' ? '₹' : quote.currency_code === 'USD' ? '$' : '€';
         if (diffDays >= 0 && diffDays <= 5) {
           insights.push({
             id: `insight-dh-exp-${quote.id}`,
@@ -45,7 +46,7 @@ export const agentService = {
             actionType: 'ALERT',
             severity: diffDays <= 2 ? 'high' : 'medium',
             title: `Quote ${quote.quote_number} Expiring in ${diffDays} Day${diffDays === 1 ? '' : 's'}`,
-            description: `Valued at ${quote.currency_code} ${quote.total_amount?.toLocaleString()} for ${quote.customer?.company_name || 'Customer'}. Immediate follow-up recommended before quote terms expire.`,
+            description: `Valued at ${qCurr}${quote.total_amount?.toLocaleString()} for ${quote.customer?.company_name || 'Customer'}. Immediate follow-up recommended before quote terms expire.`,
             entityType: 'quote',
             entityId: quote.id,
             status: 'PENDING_REVIEW',
@@ -56,6 +57,7 @@ export const agentService = {
 
       // 2. High Discount Alert (> 15%)
       if (quote.subtotal && quote.discount_amount) {
+        const qCurr = quote.currency_code === 'EUR' ? '€' : quote.currency_code === 'INR' ? '₹' : quote.currency_code === 'USD' ? '$' : '€';
         const discountPercentage = (quote.discount_amount / quote.subtotal) * 100;
         if (discountPercentage >= 15) {
           insights.push({
@@ -65,7 +67,7 @@ export const agentService = {
             actionType: 'RECOMMENDATION',
             severity: 'medium',
             title: `High Discount Warning (${discountPercentage.toFixed(1)}%) on ${quote.quote_number}`,
-            description: `Discount of ${quote.currency_code} ${quote.discount_amount.toLocaleString()} exceeds the standard 10% threshold. Verify target operating margins.`,
+            description: `Discount of ${qCurr}${quote.discount_amount.toLocaleString()} exceeds the standard 10% threshold. Verify target operating margins.`,
             entityType: 'quote',
             entityId: quote.id,
             status: 'PENDING_REVIEW',
@@ -110,6 +112,7 @@ export const agentService = {
           severity = 'medium';
         }
 
+        const curr = inv.currency_code === 'EUR' ? '€' : inv.currency_code === 'INR' ? '₹' : inv.currency_code === 'USD' ? '$' : '€';
         insights.push({
           id: `insight-col-${inv.id}`,
           agentName: 'CollectionsAgent',
@@ -117,7 +120,7 @@ export const agentService = {
           actionType: 'DRAFT_CREATED',
           severity,
           title: `Payment Follow-up Drafted for ${inv.invoice_number} (${daysOverdue} Days Overdue)`,
-          description: `Outstanding balance of ${inv.currency_code || '$'} ${balanceDue.toLocaleString()} for ${inv.customer?.company_name || 'Customer'} (Aging Bucket: ${bucket}). Personalized payment reminder email ready for dispatch.`,
+          description: `Outstanding balance of ${curr}${balanceDue.toLocaleString()} for ${inv.customer?.company_name || 'Customer'} (Aging Bucket: ${bucket}). Personalized payment reminder email ready for dispatch.`,
           entityType: 'invoice',
           entityId: inv.id,
           metadata: {
@@ -187,6 +190,7 @@ export const agentService = {
     for (const exp of filteredExpenses) {
       // 1. Duplicate check (same vendor_name, same expense_date, similar amount)
       const key = `${(exp.vendor_name || '').toLowerCase().trim()}_${exp.expense_date}_${exp.amount}`;
+      const expCurr = exp.currency === 'EUR' ? '€' : exp.currency === 'INR' ? '₹' : exp.currency === 'USD' ? '$' : '€';
       if (seenVendorDate.has(key)) {
         insights.push({
           id: `insight-fin-dup-${exp.id}`,
@@ -195,7 +199,7 @@ export const agentService = {
           actionType: 'ALERT',
           severity: 'high',
           title: `Potential Duplicate Expense Detected`,
-          description: `Expense #${exp.expense_number} (${exp.title || 'Expense'}: ${exp.currency || '$'}${exp.amount}) matches another transaction logged for vendor "${exp.vendor_name}" on ${exp.expense_date}.`,
+          description: `Expense #${exp.expense_number} (${exp.title || 'Expense'}: ${expCurr}${exp.amount.toLocaleString()}) matches another transaction logged for vendor "${exp.vendor_name}" on ${exp.expense_date}.`,
           entityType: 'expense',
           entityId: exp.id,
           status: 'PENDING_REVIEW',
@@ -205,7 +209,7 @@ export const agentService = {
         seenVendorDate.set(key, exp);
       }
 
-      // 2. High Value Discretionary Expense (> $5,000 / ₹4,00,000)
+      // 2. High Value Discretionary Expense (> €5,000 / $5,000)
       if (exp.amount > 5000 && exp.payment_status === 'pending') {
         insights.push({
           id: `insight-fin-high-${exp.id}`,
@@ -214,7 +218,7 @@ export const agentService = {
           actionType: 'ALERT',
           severity: 'medium',
           title: `Large Expense Awaiting Executive Approval`,
-          description: `Expense #${exp.expense_number} of ${exp.currency || '$'}${exp.amount.toLocaleString()} for "${exp.description || exp.title}" requires Controller signoff.`,
+          description: `Expense #${exp.expense_number} of ${expCurr}${exp.amount.toLocaleString()} for "${exp.description || exp.title}" requires Controller signoff.`,
           entityType: 'expense',
           entityId: exp.id,
           status: 'PENDING_REVIEW',

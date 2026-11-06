@@ -215,22 +215,28 @@ class InvoiceService {
 
   // Invoice Settings
   async getInvoiceSettings(companySettingsId?: string): Promise<InvoiceSettings | null> {
-    if (isMockMode) {
+    if (isMockMode || !isSupabaseConfigured) {
+      const storedSettings = mockStore.get<InvoiceSettings>('invoice_settings');
+      if (storedSettings && !Array.isArray(storedSettings)) {
+        return storedSettings;
+      }
       return {
-        id: 'inv-set-default',
-        invoice_prefix: 'INV-2026-',
-        number_format: '{PREFIX}{YEAR}-{NUMBER}',
-        current_number: 104,
+        id: 'inv-settings-001',
+        invoice_prefix: 'INV/IRL/',
+        invoice_suffix: '',
+        number_format: 'INV/IRL/YYYY/MM/XXXX',
+        current_number: 106,
         reset_annually: true,
-        financial_year_start_month: 4,
-        current_financial_year: '2026-27',
-        payment_terms: 'Net 30 days',
+        financial_year_start_month: 1, // Calendar year for Ireland
+        current_financial_year: '2026',
+        payment_terms: 'Payment due within 30 days',
         due_days: 30,
-        late_fee_percentage: 0,
-        notes: 'Thank you for your business.',
-        default_tax_rate: 18,
-        enable_gst: true,
-        template_name: 'modern',
+        late_fee_percentage: 1.5,
+        notes: 'Please remit payment via SEPA Bank Transfer to Bank of Ireland (IBAN: IE29BOFI90001798765432, BIC: BOFIIE2D).',
+        footer_text: 'Acme Cloud Technologies Ireland Limited • CRO: CRO-654321 • VAT ID: IE987654321A',
+        default_tax_rate: 23,
+        enable_gst: false,
+        template_name: 'standard',
         currency_position: 'before',
         is_active: true,
         created_at: new Date().toISOString(),
@@ -845,6 +851,22 @@ class InvoiceService {
     const currentMonth = currentDate.getMonth() + 1;
     const currentMonthStr = currentMonth.toString().padStart(2, '0');
 
+    if (isMockMode || !isSupabaseConfigured) {
+      const mockInvoices = mockStore.get<Invoice>('invoices');
+      const actualCount = mockInvoices.length;
+      const nextNum = actualCount + 1;
+      const numStr = nextNum.toString().padStart(4, '0');
+      const invoiceNumber = `INV/IRL/${currentYear}/${currentMonthStr}/${numStr}`;
+      return {
+        invoiceNumber,
+        nextSequentialNumber: nextNum,
+        currentFinancialYear: currentYear.toString(),
+        settings,
+        isIrish: true,
+        entityCode: 'IRL',
+      };
+    }
+
     let nextSequentialNumber = settings.current_number || 1;
     let currentFinancialYear: string;
 
@@ -1263,6 +1285,90 @@ class InvoiceService {
       throw new Error('Default company settings not found');
     }
 
+    if (isMockMode || !isSupabaseConfigured) {
+      const customers = mockStore.get<Customer>('customers');
+      const foundCustomer = customers.find(c => c.id === invoiceData.customer_id) || customers[0];
+      const targetCompany = companySettings;
+
+      let subtotal = 0;
+      let taxAmount = 0;
+      const invoiceItems = (invoiceData.items || []).map((item, idx) => {
+        const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
+        const itemTax = (lineTotal * (item.tax_rate ?? 23)) / 100;
+        subtotal += lineTotal;
+        taxAmount += itemTax;
+        return {
+          id: `item-${Date.now()}-${idx}`,
+          invoice_id: '',
+          item_name: item.item_name || 'Service Item',
+          description: item.description || null,
+          quantity: item.quantity || 1,
+          unit: item.unit || 'Month',
+          unit_price: item.unit_price || 0,
+          line_total: lineTotal,
+          tax_rate: item.tax_rate ?? 23,
+          tax_amount: itemTax,
+          created_at: new Date().toISOString(),
+        };
+      });
+
+      let discountAmount = 0;
+      if (invoiceData.discount_type && invoiceData.discount_value) {
+        if (invoiceData.discount_type === 'percentage') {
+          discountAmount = (subtotal * invoiceData.discount_value) / 100;
+        } else {
+          discountAmount = invoiceData.discount_value;
+        }
+      }
+
+      const discountedSubtotal = subtotal - discountAmount;
+      const averageTaxRate = taxAmount > 0 ? (taxAmount / (subtotal || 1)) * 100 : 23;
+      const adjustedTaxAmount = (discountedSubtotal * averageTaxRate) / 100;
+      const totalAmount = discountedSubtotal + adjustedTaxAmount;
+
+      const currencyCode = invoiceData.currency_code_override
+        || foundCustomer?.country?.currency_code
+        || (targetCompany as any)?.country?.currency_code
+        || 'EUR';
+
+      const newInvoice: Invoice = {
+        id: `inv-${Date.now()}`,
+        invoice_number: finalInvoiceNumber,
+        customer_id: foundCustomer?.id || invoiceData.customer_id,
+        customer: foundCustomer,
+        company_settings_id: targetCompany?.id || 'comp-irl-002',
+        company_settings: targetCompany as any,
+        project_title: invoiceData.project_title,
+        estimated_time: invoiceData.estimated_time,
+        company_contact_name: invoiceData.company_contact_name,
+        company_contact_email: invoiceData.company_contact_email,
+        company_contact_phone: invoiceData.company_contact_phone,
+        invoice_date: invoiceData.invoice_date,
+        due_date: invoiceData.due_date,
+        subtotal,
+        discount_type: invoiceData.discount_type || undefined,
+        discount_value: invoiceData.discount_value || 0,
+        discount_amount: discountAmount,
+        tax_amount: adjustedTaxAmount,
+        total_amount: totalAmount,
+        paid_amount: 0,
+        currency_code: currencyCode,
+        original_currency_code: currencyCode,
+        status: 'sent',
+        payment_status: 'pending',
+        notes: invoiceData.notes || '',
+        terms_conditions: invoiceData.terms_conditions || '',
+        invoice_items: invoiceItems as any,
+        items: invoiceItems as any,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      (newInvoice.items || []).forEach((it: any) => { it.invoice_id = newInvoice.id; });
+
+      mockStore.insert<Invoice>('invoices', newInvoice);
+      return newInvoice;
+    }
+
     // Get current user for created_by field
     const currentUser = await simpleAuth.getCurrentUser();
     if (!currentUser) {
@@ -1560,6 +1666,18 @@ class InvoiceService {
 
   async updateInvoice(id: string, invoiceData: Partial<CreateInvoiceData>): Promise<Invoice> {
     console.log('🔧 updateInvoice started:', { id, invoiceData });
+
+    if (isMockMode || !isSupabaseConfigured) {
+      const existing = mockStore.get<Invoice>('invoices').find(i => i.id === id);
+      if (!existing) throw new Error('Invoice not found');
+      const updated = {
+        ...existing,
+        ...invoiceData,
+        updated_at: new Date().toISOString(),
+      };
+      mockStore.update<Invoice>('invoices', id, updated as any);
+      return updated as Invoice;
+    }
     
     try {
       // First update the basic invoice fields
@@ -1949,6 +2067,11 @@ class InvoiceService {
   }
 
   async deleteInvoice(id: string): Promise<void> {
+    if (isMockMode || !isSupabaseConfigured) {
+      mockStore.delete('invoices', id);
+      return;
+    }
+
     // Soft delete: update status to cancelled instead of hard delete
     // This preserves data integrity and audit trails
     const { error } = await supabase
