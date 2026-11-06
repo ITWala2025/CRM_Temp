@@ -432,7 +432,7 @@ const CustomerManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <button
-                            onClick={() => navigate(`/admin/customer-360?id=${customer.id}`)}
+                            onClick={() => navigate(`/crm/customer-360?id=${customer.id}`)}
                             className="text-orange-600 hover:text-orange-900 flex items-center gap-1 font-semibold text-xs bg-orange-50 hover:bg-orange-100 px-2.5 py-1 rounded border border-orange-200 shadow-2xs transition"
                             title="Open Customer 360° Hub"
                           >
@@ -440,7 +440,7 @@ const CustomerManagement: React.FC = () => {
                             360° Hub
                           </button>
                           <button
-                            onClick={() => navigate(`/admin/customer-360?id=${customer.id}&tab=hierarchy`)}
+                            onClick={() => navigate(`/crm/customer-360?id=${customer.id}&tab=hierarchy`)}
                             className="text-violet-600 hover:text-violet-900 flex items-center gap-1 font-semibold text-xs bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded border border-violet-200 shadow-2xs transition"
                             title="Manage B2B Hierarchy"
                           >

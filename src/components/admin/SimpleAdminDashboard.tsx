@@ -18,6 +18,7 @@ import {
   Building2,
   FileSignature,
   Bot,
+  ShieldCheck,
 } from 'lucide-react';
 import AgentCopilotCenter from './AgentCopilotCenter';
 import { simpleAuth, SimpleUser } from '../../utils/simpleAuth';
@@ -49,6 +50,7 @@ const ExpenseManagement = lazy(() => import('./ExpenseManagement'));
 const FinanceManagement = lazy(() => import('./FinanceManagement'));
 const IncomeManagement = lazy(() => import('./IncomeManagement'));
 const InvoiceSettings = lazy(() => import('./InvoiceSettings'));
+const RoleManagement = lazy(() => import('./roles/RoleManagement'));
 
 type ActiveView =
   | 'dashboard'
@@ -61,6 +63,7 @@ type ActiveView =
   | 'income'
   | 'expenses'
   | 'finance'
+  | 'roles'
   | 'settings';
 
 type MenuSection = 'sales' | 'billing' | 'finance' | 'configuration';
@@ -91,16 +94,18 @@ export const SimpleAdminDashboard: React.FC = () => {
   const location = useLocation();
 
   const getActiveView = (pathname: string): ActiveView => {
-    if (pathname.startsWith('/admin/invoices')) return 'invoices';
-    if (pathname.startsWith('/admin/quotes')) return 'quotes';
-    if (pathname.startsWith('/admin/contracts')) return 'contracts';
-    if (pathname.startsWith('/admin/customer-360')) return 'customer-360';
-    if (pathname.startsWith('/admin/customers')) return 'customers';
-    if (pathname.startsWith('/admin/rate-cards')) return 'rate-cards';
-    if (pathname.startsWith('/admin/income')) return 'income';
-    if (pathname.startsWith('/admin/expenses')) return 'expenses';
-    if (pathname.startsWith('/admin/finance')) return 'finance';
-    if (pathname.startsWith('/admin/settings')) return 'settings';
+    const path = pathname.replace(/^\/admin/, '/crm');
+    if (path.startsWith('/crm/invoices')) return 'invoices';
+    if (path.startsWith('/crm/quotes')) return 'quotes';
+    if (path.startsWith('/crm/contracts')) return 'contracts';
+    if (path.startsWith('/crm/customer-360')) return 'customer-360';
+    if (path.startsWith('/crm/customers')) return 'customers';
+    if (path.startsWith('/crm/rate-cards')) return 'rate-cards';
+    if (path.startsWith('/crm/income')) return 'income';
+    if (path.startsWith('/crm/expenses')) return 'expenses';
+    if (path.startsWith('/crm/finance')) return 'finance';
+    if (path.startsWith('/crm/roles')) return 'roles';
+    if (path.startsWith('/crm/settings')) return 'settings';
     return 'dashboard';
   };
 
@@ -169,9 +174,9 @@ export const SimpleAdminDashboard: React.FC = () => {
   const renderMainContent = () => {
     switch (activeView) {
       case 'invoices':
-        return <InvoiceManagement onBackToDashboard={() => navigate('/admin')} />;
+        return <InvoiceManagement onBackToDashboard={() => navigate('/crm')} />;
       case 'quotes':
-        return <QuoteManagement onBackToDashboard={() => navigate('/admin')} />;
+        return <QuoteManagement onBackToDashboard={() => navigate('/crm')} />;
       case 'contracts':
         return <ContractManagement />;
       case 'customers':
@@ -186,6 +191,8 @@ export const SimpleAdminDashboard: React.FC = () => {
         return <ExpenseManagement />;
       case 'finance':
         return <FinanceManagement />;
+      case 'roles':
+        return <RoleManagement />;
       case 'settings':
         return <InvoiceSettings />;
       default:
@@ -232,7 +239,7 @@ export const SimpleAdminDashboard: React.FC = () => {
           {/* Main Dashboard Link */}
           <div>
             <button
-              onClick={() => navigate('/admin')}
+              onClick={() => navigate('/crm')}
               className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
                 activeView === 'dashboard'
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
@@ -263,7 +270,7 @@ export const SimpleAdminDashboard: React.FC = () => {
               <ul className="mt-2 space-y-1">
                 <li>
                   <button
-                    onClick={() => navigate('/admin/customers')}
+                    onClick={() => navigate('/crm/customers')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'customers' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -276,7 +283,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/customer-360')}
+                    onClick={() => navigate('/crm/customer-360')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'customer-360' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -289,7 +296,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/quotes')}
+                    onClick={() => navigate('/crm/quotes')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'quotes' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -302,7 +309,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/contracts')}
+                    onClick={() => navigate('/crm/contracts')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'contracts' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -315,7 +322,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/rate-cards')}
+                    onClick={() => navigate('/crm/rate-cards')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'rate-cards' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -347,7 +354,7 @@ export const SimpleAdminDashboard: React.FC = () => {
               <ul className="mt-2 space-y-1">
                 <li>
                   <button
-                    onClick={() => navigate('/admin/invoices')}
+                    onClick={() => navigate('/crm/invoices')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'invoices' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -360,7 +367,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/income')}
+                    onClick={() => navigate('/crm/income')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'income' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -392,7 +399,7 @@ export const SimpleAdminDashboard: React.FC = () => {
               <ul className="mt-2 space-y-1">
                 <li>
                   <button
-                    onClick={() => navigate('/admin/expenses')}
+                    onClick={() => navigate('/crm/expenses')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'expenses' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -405,7 +412,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 <li>
                   <button
-                    onClick={() => navigate('/admin/finance')}
+                    onClick={() => navigate('/crm/finance')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'finance' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -437,7 +444,19 @@ export const SimpleAdminDashboard: React.FC = () => {
               <ul className="mt-2 space-y-1">
                 <li>
                   <button
-                    onClick={() => navigate('/admin/settings')}
+                    onClick={() => navigate('/crm/roles')}
+                    className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeView === 'roles' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                    title={!sidebarOpen ? 'Roles & Permissions' : undefined}
+                  >
+                    <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="ml-3">Roles & RBAC</span>}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigate('/crm/settings')}
                     className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       activeView === 'settings' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
@@ -530,7 +549,7 @@ export const SimpleAdminDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Revenue Card */}
                 <div
-                  onClick={() => navigate('/admin/invoices')}
+                  onClick={() => navigate('/crm/invoices')}
                   className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
@@ -552,7 +571,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 {/* Quotes Card */}
                 <div
-                  onClick={() => navigate('/admin/quotes')}
+                  onClick={() => navigate('/crm/quotes')}
                   className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
@@ -574,7 +593,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 {/* Contracts Card */}
                 <div
-                  onClick={() => navigate('/admin/contracts')}
+                  onClick={() => navigate('/crm/contracts')}
                   className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
@@ -596,7 +615,7 @@ export const SimpleAdminDashboard: React.FC = () => {
 
                 {/* Net Margin / Operating Profit */}
                 <div
-                  onClick={() => navigate('/admin/finance')}
+                  onClick={() => navigate('/crm/finance')}
                   className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
@@ -622,7 +641,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                 <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Quick CRM Operations</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   <button
-                    onClick={() => navigate('/admin/customers')}
+                    onClick={() => navigate('/crm/customers')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-700 transition-all border border-indigo-100 group"
                   >
                     <Building2 className="w-6 h-6 mb-2 text-indigo-600 group-hover:scale-110 transition-transform" />
@@ -630,7 +649,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/admin/quotes')}
+                    onClick={() => navigate('/crm/quotes')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-purple-50/60 hover:bg-purple-100/80 text-purple-700 transition-all border border-purple-100 group"
                   >
                     <FileText className="w-6 h-6 mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
@@ -638,7 +657,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/admin/invoices')}
+                    onClick={() => navigate('/crm/invoices')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 transition-all border border-blue-100 group"
                   >
                     <Receipt className="w-6 h-6 mb-2 text-blue-600 group-hover:scale-110 transition-transform" />
@@ -646,7 +665,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/admin/contracts')}
+                    onClick={() => navigate('/crm/contracts')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-emerald-50/60 hover:bg-emerald-100/80 text-emerald-700 transition-all border border-emerald-100 group"
                   >
                     <FileSignature className="w-6 h-6 mb-2 text-emerald-600 group-hover:scale-110 transition-transform" />
@@ -654,7 +673,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/admin/income')}
+                    onClick={() => navigate('/crm/income')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-teal-50/60 hover:bg-teal-100/80 text-teal-700 transition-all border border-teal-100 group"
                   >
                     <TrendingUp className="w-6 h-6 mb-2 text-teal-600 group-hover:scale-110 transition-transform" />
@@ -662,7 +681,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/admin/expenses')}
+                    onClick={() => navigate('/crm/expenses')}
                     className="flex flex-col items-center justify-center p-4 rounded-xl bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 transition-all border border-rose-100 group"
                   >
                     <Wallet className="w-6 h-6 mb-2 text-rose-600 group-hover:scale-110 transition-transform" />
@@ -681,7 +700,7 @@ export const SimpleAdminDashboard: React.FC = () => {
                       <p className="text-xs text-gray-500">Latest billing transactions across entities</p>
                     </div>
                     <button
-                      onClick={() => navigate('/admin/invoices')}
+                      onClick={() => navigate('/crm/invoices')}
                       className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
                     >
                       View All &rarr;
@@ -759,11 +778,11 @@ export const SimpleAdminDashboard: React.FC = () => {
         onClose={() => setIsAgentCenterOpen(false)}
         onNavigateToEntity={(entityType: string) => {
           setIsAgentCenterOpen(false);
-          if (entityType === 'invoice') navigate('/admin/invoices');
-          else if (entityType === 'quote') navigate('/admin/quotes');
-          else if (entityType === 'contract') navigate('/admin/contracts');
-          else if (entityType === 'expense') navigate('/admin/expenses');
-          else if (entityType === 'customer') navigate('/admin/customers');
+          if (entityType === 'invoice') navigate('/crm/invoices');
+          else if (entityType === 'quote') navigate('/crm/quotes');
+          else if (entityType === 'contract') navigate('/crm/contracts');
+          else if (entityType === 'expense') navigate('/crm/expenses');
+          else if (entityType === 'customer') navigate('/crm/customers');
         }}
       />
     </div>

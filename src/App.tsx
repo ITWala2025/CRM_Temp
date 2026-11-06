@@ -37,27 +37,31 @@ export function App() {
                 {/* Admin Auth */}
                 <Route path="/login" element={<AdminLogin />} />
 
-                {/* Main CRM Admin Dashboard and all nested functional CRM views */}
+                {/* Main CRM Dashboard and all nested functional CRM views */}
+                <Route path="/crm/*" element={<SimpleAdminDashboard />} />
+
+                {/* Legacy /admin compatibility alias */}
                 <Route path="/admin/*" element={<SimpleAdminDashboard />} />
 
-                {/* Convenience direct aliases redirecting into the CRM modules */}
-                <Route path="/invoices/new" element={<Navigate to="/admin/invoices/new" replace />} />
-                <Route path="/invoices/list" element={<Navigate to="/admin/invoices/list" replace />} />
-                <Route path="/invoices/*" element={<Navigate to="/admin/invoices" replace />} />
-                <Route path="/invoices" element={<Navigate to="/admin/invoices" replace />} />
-                <Route path="/quotes" element={<Navigate to="/admin/quotes" replace />} />
-                <Route path="/contracts" element={<Navigate to="/admin/contracts" replace />} />
-                <Route path="/customers" element={<Navigate to="/admin/customers" replace />} />
-                <Route path="/customer-360" element={<Navigate to="/admin/customer-360" replace />} />
-                <Route path="/rate-cards" element={<Navigate to="/admin/rate-cards" replace />} />
-                <Route path="/income" element={<Navigate to="/admin/income" replace />} />
-                <Route path="/expenses" element={<Navigate to="/admin/expenses" replace />} />
-                <Route path="/finance" element={<Navigate to="/admin/finance" replace />} />
-                <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
+                {/* Direct aliases redirecting into the CRM modules */}
+                <Route path="/invoices/new" element={<Navigate to="/crm/invoices/new" replace />} />
+                <Route path="/invoices/list" element={<Navigate to="/crm/invoices/list" replace />} />
+                <Route path="/invoices/*" element={<Navigate to="/crm/invoices" replace />} />
+                <Route path="/invoices" element={<Navigate to="/crm/invoices" replace />} />
+                <Route path="/quotes" element={<Navigate to="/crm/quotes" replace />} />
+                <Route path="/contracts" element={<Navigate to="/crm/contracts" replace />} />
+                <Route path="/customers" element={<Navigate to="/crm/customers" replace />} />
+                <Route path="/customer-360" element={<Navigate to="/crm/customer-360" replace />} />
+                <Route path="/rate-cards" element={<Navigate to="/crm/rate-cards" replace />} />
+                <Route path="/income" element={<Navigate to="/crm/income" replace />} />
+                <Route path="/expenses" element={<Navigate to="/crm/expenses" replace />} />
+                <Route path="/finance" element={<Navigate to="/crm/finance" replace />} />
+                <Route path="/roles" element={<Navigate to="/crm/roles" replace />} />
+                <Route path="/settings" element={<Navigate to="/crm/settings" replace />} />
 
                 {/* Default route */}
-                <Route path="/" element={<Navigate to="/admin" replace />} />
-                <Route path="*" element={<Navigate to="/admin" replace />} />
+                <Route path="/" element={<Navigate to="/crm" replace />} />
+                <Route path="*" element={<Navigate to="/crm" replace />} />
               </Routes>
             </Suspense>
           </ActionProgressProvider>

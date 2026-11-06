@@ -432,47 +432,94 @@ class InvoiceService {
 
   // Terms Templates
   async getTermsTemplates(): Promise<TermsTemplate[]> {
-    const { data, error } = await supabase
-      .from('terms_templates')
-      .select('*')
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-      .order('name');
-    
-    if (error) throw error;
-    return data || [];
+    if (isMockMode || !isSupabaseConfigured) {
+      return mockStore.get<TermsTemplate>('terms_templates').filter(t => t.is_active);
+    }
+    try {
+      const { data, error } = await supabase
+        .from('terms_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('is_default', { ascending: false })
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.warn('Supabase terms_templates query failed, falling back to mockStore:', err);
+      return mockStore.get<TermsTemplate>('terms_templates').filter(t => t.is_active);
+    }
   }
 
   async createTermsTemplate(template: Omit<TermsTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<TermsTemplate> {
-    const { data, error } = await supabase
-      .from('terms_templates')
-      .insert(template)
-      .select('*')
-      .single();
-    
-    if (error) throw error;
-    return data;
+    if (isMockMode || !isSupabaseConfigured) {
+      const now = new Date().toISOString();
+      const newTemplate: TermsTemplate = {
+        ...template,
+        id: `terms-${Date.now()}`,
+        created_at: now,
+        updated_at: now,
+      };
+      return mockStore.insert<TermsTemplate>('terms_templates', newTemplate);
+    }
+    try {
+      const { data, error } = await supabase
+        .from('terms_templates')
+        .insert(template)
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase createTermsTemplate failed, falling back to mockStore:', err);
+      const now = new Date().toISOString();
+      const newTemplate: TermsTemplate = {
+        ...template,
+        id: `terms-${Date.now()}`,
+        created_at: now,
+        updated_at: now,
+      };
+      return mockStore.insert<TermsTemplate>('terms_templates', newTemplate);
+    }
   }
 
   async updateTermsTemplate(id: string, template: Partial<TermsTemplate>): Promise<TermsTemplate> {
-    const { data, error } = await supabase
-      .from('terms_templates')
-      .update(template)
-      .eq('id', id)
-      .select('*')
-      .single();
-    
-    if (error) throw error;
-    return data;
+    if (isMockMode || !isSupabaseConfigured) {
+      return mockStore.update<TermsTemplate>('terms_templates', id, template as any);
+    }
+    try {
+      const { data, error } = await supabase
+        .from('terms_templates')
+        .update(template)
+        .eq('id', id)
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Supabase updateTermsTemplate failed, falling back to mockStore:', err);
+      return mockStore.update<TermsTemplate>('terms_templates', id, template as any);
+    }
   }
 
   async deleteTermsTemplate(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('terms_templates')
-      .update({ is_active: false })
-      .eq('id', id);
-    
-    if (error) throw error;
+    if (isMockMode || !isSupabaseConfigured) {
+      mockStore.update<TermsTemplate>('terms_templates', id, { is_active: false } as any);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('terms_templates')
+        .update({ is_active: false })
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (err) {
+      console.warn('Supabase deleteTermsTemplate failed, falling back to mockStore:', err);
+      mockStore.update<TermsTemplate>('terms_templates', id, { is_active: false } as any);
+    }
   }
 
   // Customers

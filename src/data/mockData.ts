@@ -672,6 +672,39 @@ export const mockInvoices: Invoice[] = [
   },
 ];
 
+export const mockTermsTemplates: TermsTemplate[] = [
+  {
+    id: 'terms-tmpl-001',
+    name: 'Standard B2B Terms (Ireland / EU)',
+    category: 'general',
+    content: 'Payment is due within 30 days from date of invoice. Late payments are subject to interest under European Communities (Late Payment in Commercial Transactions) Regulations 2012. Title to goods/services remains with the provider until full payment is received.',
+    is_default: true,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'terms-tmpl-002',
+    name: 'Software Services & Retainer Terms',
+    category: 'services',
+    content: 'Invoices are issued against agreed milestones or monthly time & materials retainers. Please remit payment electronically quoting invoice number to the Bank of Ireland account provided.',
+    is_default: false,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'terms-tmpl-003',
+    name: 'Due Upon Receipt',
+    category: 'immediate',
+    content: 'Payment is due immediately upon presentation of this invoice. Electronic transfer preferred.',
+    is_default: false,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+];
+
 // ----------------------------------------------------------------------
 // Contracts & Templates (Irish Law & EUR)
 // ----------------------------------------------------------------------

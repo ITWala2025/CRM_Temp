@@ -187,7 +187,7 @@ export const Customer360Hub: React.FC = () => {
             Please select a customer from the dropdown above or create a new customer in Customer Management to view their 360° hub.
           </p>
           <button
-            onClick={() => navigate('/admin/customers')}
+            onClick={() => navigate('/crm/customers')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition"
           >
             Go to Customer Management
@@ -265,14 +265,14 @@ export const Customer360Hub: React.FC = () => {
                   Manage Contacts
                 </button>
                 <button
-                  onClick={() => navigate(`/admin/quotes?action=create&customerId=${currentCustomer.id}`)}
+                  onClick={() => navigate(`/crm/quotes?action=create&customerId=${currentCustomer.id}`)}
                   className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 border border-white/10"
                 >
                   <FilePlus className="w-4 h-4 text-blue-400" />
                   Create Quote
                 </button>
                 <button
-                  onClick={() => navigate(`/admin/invoices?action=create&customerId=${currentCustomer.id}`)}
+                  onClick={() => navigate(`/crm/invoices?action=create&customerId=${currentCustomer.id}`)}
                   className="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md flex items-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" />
@@ -634,7 +634,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Leads Pipeline ({data360.leads.length})</h3>
                     <button
-                      onClick={() => navigate(`/admin/leads?action=create&customerId=${currentCustomer.id}`)}
+                      onClick={() => navigate(`/crm/leads?action=create&customerId=${currentCustomer.id}`)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                       <Plus className="w-4 h-4" /> Create New Lead
@@ -698,7 +698,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Sales Opportunities ({data360.opportunities.length})</h3>
                     <button
-                      onClick={() => navigate(`/admin/opportunities?action=create&customerId=${currentCustomer.id}`)}
+                      onClick={() => navigate(`/crm/opportunities?action=create&customerId=${currentCustomer.id}`)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                       <Plus className="w-4 h-4" /> Create Opportunity
@@ -761,7 +761,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Issued Quotes ({data360.quotes.length})</h3>
                     <button
-                      onClick={() => navigate(`/admin/quotes?action=create&customerId=${currentCustomer.id}`)}
+                      onClick={() => navigate(`/crm/quotes?action=create&customerId=${currentCustomer.id}`)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                       <Plus className="w-4 h-4" /> Create Quote
@@ -832,7 +832,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Legal Contracts ({data360.contracts.length})</h3>
                     <button
-                      onClick={() => navigate(`/admin/contracts?action=create&customerId=${currentCustomer.id}`)}
+                      onClick={() => navigate(`/crm/contracts?action=create&customerId=${currentCustomer.id}`)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                       <Plus className="w-4 h-4" /> Create Contract
@@ -895,7 +895,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">Recurring Subscriptions ({data360.subscriptions.length})</h3>
                     <button
-                      onClick={() => navigate(`/admin/subscriptions?action=create&customerId=${currentCustomer.id}`)}
+                      onClick={() => navigate(`/crm/subscriptions?action=create&customerId=${currentCustomer.id}`)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                       <Plus className="w-4 h-4" /> Add Subscription
@@ -964,7 +964,7 @@ export const Customer360Hub: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold text-gray-900">Invoices ({data360.invoices.length})</h3>
                       <button
-                        onClick={() => navigate(`/admin/invoices?action=create&customerId=${currentCustomer.id}`)}
+                        onClick={() => navigate(`/crm/invoices?action=create&customerId=${currentCustomer.id}`)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 transition"
                       >
                         <Plus className="w-4 h-4" /> Create Invoice
@@ -1074,7 +1074,7 @@ export const Customer360Hub: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900">ITSM Support Tickets ({data360.itsmTickets?.length || 0})</h3>
                     <button
-                      onClick={() => navigate('/admin/itsm/tickets')}
+                      onClick={() => navigate('/crm/itsm/tickets')}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
                     >
                       <LifeBuoy className="w-4 h-4" /> Open Triage Desk

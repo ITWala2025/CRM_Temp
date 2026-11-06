@@ -3282,7 +3282,7 @@ Please review immediately on the Triage Desk.
   ): Promise<boolean> {
     if (!email) return false;
 
-    const adminUrl = `${window.location.origin}/admin`;
+    const adminUrl = `${window.location.origin}/crm`;
     const itsmUrl = `${window.location.origin}/itsm`;
     const subject = `Welcome to Kdadks Team — Your Staff Account Details (${roleName})`;
 

@@ -10,6 +10,7 @@ import {
   mockQuotes,
   mockInvoiceSettings,
   mockInvoices,
+  mockTermsTemplates,
   mockContractTemplates,
   mockContracts,
   mockIncomeCategories,
@@ -35,6 +36,7 @@ export interface CRMStorageState {
   quotes: any[];
   invoice_settings: any;
   invoices: any[];
+  terms_templates: any[];
   contract_templates: any[];
   contracts: any[];
   income_categories: any[];
@@ -59,6 +61,7 @@ function getDefaultState(): CRMStorageState {
     quotes: JSON.parse(JSON.stringify(mockQuotes)),
     invoice_settings: JSON.parse(JSON.stringify(mockInvoiceSettings)),
     invoices: JSON.parse(JSON.stringify(mockInvoices)),
+    terms_templates: JSON.parse(JSON.stringify(mockTermsTemplates)),
     contract_templates: JSON.parse(JSON.stringify(mockContractTemplates)),
     contracts: JSON.parse(JSON.stringify(mockContracts)),
     income_categories: JSON.parse(JSON.stringify(mockIncomeCategories)),
@@ -83,6 +86,10 @@ class MockStore {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.version === 2) {
+          if (!parsed.terms_templates || !parsed.terms_templates.length) {
+            parsed.terms_templates = JSON.parse(JSON.stringify(mockTermsTemplates));
+            this.saveState(parsed);
+          }
           return parsed;
         }
       }

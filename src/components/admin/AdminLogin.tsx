@@ -21,7 +21,7 @@ export const AdminLogin: React.FC = () => {
       setTimeout(() => {
         setIsLoading(false);
         showSuccess('Welcome to CRM Template', 'Logged in successfully under Mock Mode');
-        navigate('/admin', { replace: true });
+        navigate('/crm', { replace: true });
       }, 400);
       return;
     }
@@ -43,7 +43,7 @@ export const AdminLogin: React.FC = () => {
       } else {
         showSuccess('Login Successful', 'Redirecting to CRM dashboard...');
         setTimeout(() => {
-          navigate('/admin', { replace: true });
+          navigate('/crm', { replace: true });
         }, 400);
       }
     } catch {
@@ -55,7 +55,7 @@ export const AdminLogin: React.FC = () => {
 
   const handleDemoLogin = () => {
     showSuccess('Demo Access Granted', 'Accessing CRM with full administrative privileges');
-    navigate('/admin', { replace: true });
+    navigate('/crm', { replace: true });
   };
 
   return (

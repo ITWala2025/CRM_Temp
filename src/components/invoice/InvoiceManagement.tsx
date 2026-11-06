@@ -82,14 +82,18 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
   const [filters, setFilters] = useState<InvoiceFilters>({});
   type InvoiceTab = 'dashboard' | 'invoices' | 'create-invoice';
   const TAB_PATHS: Record<InvoiceTab, string> = {
-    dashboard: '/admin/invoices',
-    invoices: '/admin/invoices/list',
-    'create-invoice': '/admin/invoices/new',
+    dashboard: '/crm/invoices',
+    invoices: '/crm/invoices/list',
+    'create-invoice': '/crm/invoices/new',
   };
-  const tabFromPath = (pathname: string): InvoiceTab =>
-    pathname === '/admin/invoices/list' ? 'invoices' :
-      pathname === '/admin/invoices/new' ? 'create-invoice' :
-        'dashboard';
+  const tabFromPath = (pathname: string): InvoiceTab => {
+    const cleanPath = pathname.replace(/^\/admin/, '/crm');
+    return cleanPath === '/crm/invoices/list'
+      ? 'invoices'
+      : cleanPath === '/crm/invoices/new'
+      ? 'create-invoice'
+      : 'dashboard';
+  };
   const [activeTab, setActiveTab] = useState<InvoiceTab>(tabFromPath(window.location.pathname));
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -208,7 +212,8 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
     const action = params.get('action');
     const customerId = params.get('customerId');
 
-    if (location.pathname === '/admin/invoices/new' || action === 'create') {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+    if (cleanPath === '/crm/invoices/new' || action === 'create') {
       setActiveTab('create-invoice');
       openCreateInvoiceTab(customerId || undefined);
     } else {
@@ -1317,7 +1322,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
       const company = fullInvoice.company_settings || selectedCompany || companySettings.find(c => c.is_default) || companySettings[0];
       if (!company) {
         showError('No company settings found. Please go to Settings and configure your company information first, then try again.');
-        navigate('/admin/settings');
+        navigate('/crm/settings');
         return;
       }
 
@@ -2429,7 +2434,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ onBackToDashboard
 
       if (!company) {
         showError('Cannot send email: No company settings found. Please go to Settings and configure your company information first, then try again.');
-        navigate('/admin/settings');
+        navigate('/crm/settings');
         return;
       }
 
