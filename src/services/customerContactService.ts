@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { supabase, isSupabaseConfigured, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 import type { CustomerContact, CreateCustomerContactData, UpdateCustomerContactData, CustomerContactFilters } from '../types/customerContact';
 import type { Customer } from '../types/invoice';
 
@@ -11,6 +12,12 @@ class CustomerContactService {
    * Fetch all contacts for a specific customer
    */
   async getCustomerContacts(customerId: string, includeInactive: boolean = false): Promise<CustomerContact[]> {
+    if (isMockMode) {
+      let contacts = mockStore.get<CustomerContact>('customer_contacts').filter((c) => c.customer_id === customerId);
+      if (!includeInactive) contacts = contacts.filter((c) => c.is_active);
+      return contacts;
+    }
+
     if (!isSupabaseConfigured) {
       console.warn('Supabase not configured, returning empty contact array');
       return [];

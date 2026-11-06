@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { supabase, isSupabaseConfigured, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 import { convertCurrency } from '../utils/currencyConverter';
 import { customerHierarchyService } from './customerHierarchyService';
 import type { Customer, Invoice, Payment } from '../types/invoice';
@@ -17,7 +18,49 @@ class Customer360Service {
    * @param targetCurrency - Target currency of the active entity (INR for India, EUR for Ireland, etc.)
    */
   async getCustomer360Data(customerId: string, targetCurrency: string = 'INR'): Promise<Customer360Data | null> {
-    if (!isSupabaseConfigured || !customerId) {
+    if (!customerId) return null;
+
+    if (isMockMode) {
+      const customer = mockStore.getById<Customer>('customers', customerId);
+      if (!customer) return null;
+      const contacts = mockStore.get<CustomerContact>('customer_contacts').filter((c) => c.customer_id === customerId);
+      const quotes = mockStore.get<Quote>('quotes').filter((q) => q.customer_id === customerId);
+      const invoices = mockStore.get<Invoice>('invoices').filter((i) => i.customer_id === customerId);
+      const contracts = mockStore.get<Contract>('contracts').filter((c) => (c as any).customer_id === customerId || c.party_b_name === customer.company_name);
+      const timeline = mockStore.get<CustomerActivityTimelineItem>('activity_timeline');
+      const totalInvoiced = invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
+      const totalCollected = invoices.filter((i) => i.payment_status === 'paid').reduce((sum, i) => sum + (i.total_amount || 0), 0);
+      const outstandingBalance = invoices.filter((i) => i.payment_status !== 'paid').reduce((sum, i) => sum + (i.total_amount || 0), 0);
+      const metrics: CustomerFinancialMetrics = {
+        totalInvoiced,
+        totalCollected,
+        outstandingBalance,
+        overdueBalance: invoices.filter((i) => i.status === 'overdue').reduce((sum, i) => sum + (i.total_amount || 0), 0),
+        activeSubscriptionMRR: 0,
+        openPipelineValue: quotes.reduce((sum, q) => sum + (q.total_amount || 0), 0),
+        winRatePercentage: quotes.length > 0 ? (quotes.filter((q) => q.status === 'converted' || q.status === 'accepted').length / quotes.length) * 100 : 0,
+        contractsCount: contracts.filter((c) => c.status === 'active').length,
+        totalInvoicesCount: invoices.length,
+        paidInvoicesCount: invoices.filter((i) => i.payment_status === 'paid').length,
+      };
+      return {
+        customer,
+        contacts,
+        leads: [],
+        opportunities: [],
+        quotes,
+        invoices,
+        payments: [],
+        contracts,
+        subscriptions: [],
+        relationships: [],
+        contactLinks: [],
+        metrics,
+        timeline,
+      };
+    }
+
+    if (!isSupabaseConfigured) {
       console.warn('Supabase not configured or missing customerId');
       return null;
     }

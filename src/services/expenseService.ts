@@ -1,4 +1,5 @@
-import { supabase } from '../config/supabase';
+import { supabase, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 
 // ==================== TYPES ====================
 
@@ -147,6 +148,10 @@ export const expenseService = {
   // ==================== CATEGORIES ====================
 
   async getCategories(): Promise<ExpenseCategory[]> {
+    if (isMockMode) {
+      return mockStore.get<ExpenseCategory>('expense_categories');
+    }
+
     const { data, error } = await supabase
       .from('expense_categories')
       .select('*')
@@ -192,6 +197,12 @@ export const expenseService = {
   // ==================== VENDORS ====================
 
   async getVendors(activeOnly: boolean = true): Promise<Vendor[]> {
+    if (isMockMode) {
+      let list = mockStore.get<Vendor>('vendors');
+      if (activeOnly) list = list.filter((v) => v.is_active);
+      return list;
+    }
+
     let query = supabase
       .from('vendors')
       .select('*')
@@ -265,6 +276,27 @@ export const expenseService = {
     page: number = 1,
     perPage: number = 20
   ): Promise<PaginatedResponse<Expense>> {
+    if (isMockMode) {
+      let list = mockStore.get<Expense>('expenses');
+      if (filters?.search) {
+        const s = filters.search.toLowerCase();
+        list = list.filter((e) => e.expense_number.toLowerCase().includes(s) || e.title.toLowerCase().includes(s));
+      }
+      if (filters?.company_settings_id) {
+        list = list.filter((e) => !(e as any).company_settings_id || (e as any).company_settings_id === filters.company_settings_id);
+      }
+      const count = list.length;
+      const startIndex = (page - 1) * perPage;
+      const data = list.slice(startIndex, startIndex + perPage);
+      return {
+        data,
+        count,
+        page,
+        per_page: perPage,
+        total_pages: Math.max(1, Math.ceil(count / perPage)),
+      };
+    }
+
     let query = supabase
       .from('expenses')
       .select(`
@@ -413,6 +445,24 @@ export const expenseService = {
   },
 
   async getExpenseStats(startDate?: string, endDate?: string, companySettingsId?: string): Promise<ExpenseStats> {
+    if (isMockMode) {
+      let expenses = mockStore.get<Expense>('expenses');
+      if (companySettingsId) {
+        expenses = expenses.filter((e) => (e as any).company_settings_id === companySettingsId);
+      }
+      const totalAmount = expenses.reduce((sum, e) => sum + (e.total_amount || e.amount || 0), 0);
+      const paidThisMonth = expenses.filter((e) => e.payment_status === 'paid').reduce((sum, e) => sum + (e.total_amount || e.amount || 0), 0);
+      const pendingPayment = expenses.filter((e) => e.payment_status === 'pending').reduce((sum, e) => sum + (e.total_amount || e.amount || 0), 0);
+      return {
+        totalExpenses: expenses.length,
+        totalAmount,
+        pendingApproval: 0,
+        pendingPayment,
+        paidThisMonth,
+        byCategory: [],
+      };
+    }
+
     const today = new Date();
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];

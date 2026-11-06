@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { supabase, isSupabaseConfigured, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 import type {
   CustomerRelationship,
   CreateCustomerRelationshipData,
@@ -37,6 +38,12 @@ class CustomerHierarchyService {
    * Returns relationships where the customer is either from_customer or to_customer.
    */
   async getRelationships(customerId: string): Promise<CustomerRelationship[]> {
+    if (isMockMode) {
+      return mockStore.get<CustomerRelationship>('customer_relationships').filter(
+        (r: any) => r.from_customer_id === customerId || r.to_customer_id === customerId
+      );
+    }
+
     if (!isSupabaseConfigured || !customerId) return [];
 
     const [fromResult, toResult] = await Promise.all([

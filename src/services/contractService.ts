@@ -3,7 +3,8 @@
  * Handles all database operations for contract management
  */
 
-import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { supabase, isSupabaseConfigured, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 import { simpleAuth } from '../utils/simpleAuth';
 import { convertToINR } from '../utils/currencyConverter';
 import { exchangeRateService } from './exchangeRateService';
@@ -93,10 +94,6 @@ class ContractService {
    * e.g. KDADKS/IND/2026/08/0001, KDADKS/IRL/2026/08/0002
    */
   async generateContractNumber(entityPrefix?: string, contractType?: string): Promise<string> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
-    }
-
     const year = new Date().getFullYear();
     const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
 
@@ -117,6 +114,12 @@ class ContractService {
     }
 
     const prefix = `KDADKS/${entity}/${year}/${month}/`;
+
+    if (isMockMode || !isSupabaseConfigured) {
+      const existing = mockStore.get<Contract>('contracts').filter(c => c.contract_number.startsWith(prefix));
+      const nextNum = (existing.length + 1).toString().padStart(4, '0');
+      return `${prefix}${nextNum}`;
+    }
 
     const { data, error } = await supabase
       .from('contracts')
@@ -333,8 +336,28 @@ class ContractService {
    * Create a new contract
    */
   async createContract(contractData: CreateContractData): Promise<Contract> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      const contractNumber = await this.generateContractNumber(contractData.entity_prefix, contractData.contract_type);
+      const newContract: Contract = {
+        id: `contract-${Date.now()}`,
+        contract_number: contractNumber,
+        company_settings_id: contractData.company_settings_id,
+        party_a_name: contractData.party_a_name,
+        party_b_name: contractData.party_b_name,
+        contract_type: contractData.contract_type,
+        contract_title: contractData.contract_title,
+        contract_date: contractData.contract_date,
+        effective_date: contractData.effective_date,
+        expiry_date: contractData.expiry_date,
+        contract_value: contractData.contract_value || 0,
+        currency_code: contractData.currency_code || 'USD',
+        signed_by_party_a: false,
+        signed_by_party_b: false,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return mockStore.insert<Contract>('contracts', newContract);
     }
 
     const currentUser = await simpleAuth.getCurrentUser();
@@ -453,8 +476,29 @@ class ContractService {
     page: number = 1,
     perPage: number = 10
   ): Promise<{ contracts: Contract[]; total: number }> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      let list = mockStore.get<Contract>('contracts');
+      if (filters?.search) {
+        const s = filters.search.toLowerCase();
+        list = list.filter((c) =>
+          c.contract_number.toLowerCase().includes(s) ||
+          c.party_b_name.toLowerCase().includes(s) ||
+          c.contract_title.toLowerCase().includes(s)
+        );
+      }
+      if (filters?.contract_type) {
+        list = list.filter((c) => c.contract_type === filters.contract_type);
+      }
+      if (filters?.status) {
+        list = list.filter((c) => c.status === filters.status);
+      }
+      if (filters?.company_settings_id) {
+        list = list.filter((c) => c.company_settings_id === filters.company_settings_id);
+      }
+      const total = list.length;
+      const startIndex = (page - 1) * perPage;
+      const contracts = list.slice(startIndex, startIndex + perPage);
+      return { contracts, total };
     }
 
     let query = supabase
@@ -510,8 +554,14 @@ class ContractService {
    * Get single contract by ID with all details
    */
   async getContractById(id: string): Promise<ContractWithDetails | null> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      const c = mockStore.getById<Contract>('contracts', id);
+      if (!c) return null;
+      return {
+        ...c,
+        sections: [],
+        milestones: [],
+      };
     }
 
     // Get contract
@@ -589,8 +639,8 @@ class ContractService {
    * Update contract
    */
   async updateContract(contractData: UpdateContractData): Promise<Contract> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      return mockStore.update<Contract>('contracts', contractData.id, contractData as any);
     }
 
     const isUuid = (str?: string) => str ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str) : false;
@@ -689,8 +739,9 @@ class ContractService {
    * Update contract status
    */
   async updateContractStatus(id: string, status: Contract['status']): Promise<void> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      mockStore.update<Contract>('contracts', id, { status });
+      return;
     }
 
     const { error } = await supabase
@@ -806,8 +857,39 @@ class ContractService {
    * Get contract statistics with values converted to target currency (INR for IND entity, EUR for IRL entity)
    */
   async getStatistics(companySettingsId?: string, targetCurrency: string = 'INR'): Promise<ContractStatistics> {
-    if (!isSupabaseConfigured) {
-      throw new Error('Database is not configured');
+    if (isMockMode || !isSupabaseConfigured) {
+      let contracts = mockStore.get<Contract>('contracts');
+      if (companySettingsId) {
+        contracts = contracts.filter((c) => c.company_settings_id === companySettingsId);
+      }
+      const now = new Date();
+      const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const active = contracts.filter((c) => c.status === 'active');
+      const draft = contracts.filter((c) => c.status === 'draft');
+      const expired = contracts.filter((c) => c.status === 'expired');
+      const expiringSoon = contracts.filter((c) => c.status === 'active' && c.expiry_date && new Date(c.expiry_date) <= thirtyDays && new Date(c.expiry_date) >= now);
+      const totalVal = contracts.reduce((sum, c) => sum + (c.contract_value || 0), 0);
+      const activeVal = active.reduce((sum, c) => sum + (c.contract_value || 0), 0);
+      return {
+        total_contracts: contracts.length,
+        active_contracts: active.length,
+        draft_contracts: draft.length,
+        expired_contracts: expired.length,
+        expiring_soon: expiringSoon.length,
+        total_contract_value: totalVal,
+        active_contract_value: activeVal,
+        contracts_by_type: {
+          MSA: contracts.filter((c) => c.contract_type === 'MSA').length,
+          SOW: contracts.filter((c) => c.contract_type === 'SOW').length,
+          NDA: contracts.filter((c) => c.contract_type === 'NDA').length,
+          SLA: contracts.filter((c) => c.contract_type === 'SLA').length,
+          WORK_ORDER: contracts.filter((c) => c.contract_type === 'WORK_ORDER').length,
+          MAINTENANCE: contracts.filter((c) => c.contract_type === 'MAINTENANCE').length,
+          CONSULTING: contracts.filter((c) => c.contract_type === 'CONSULTING').length,
+          LICENSE: contracts.filter((c) => c.contract_type === 'LICENSE').length,
+          OTHER: contracts.filter((c) => c.contract_type === 'OTHER').length,
+        },
+      };
     }
 
     let query = supabase

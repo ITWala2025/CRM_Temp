@@ -29,7 +29,10 @@ import {
   CheckCircle2,
   AlertCircle,
   FileSignature,
+  Bot,
+  Sparkles,
 } from 'lucide-react';
+import AgentCopilotCenter from './AgentCopilotCenter';
 import { simpleAuth, SimpleUser } from '../../utils/simpleAuth';
 import { isSupabaseConfigured } from '../../config/supabase';
 import { invoiceService } from '../../services/invoiceService';
@@ -94,6 +97,7 @@ export const SimpleAdminDashboard: React.FC = () => {
   const [expenseStats, setExpenseStats] = useState<ExpenseStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [recentTimeline, setRecentTimeline] = useState<CustomerActivityTimelineItem[]>([]);
+  const [isAgentCenterOpen, setIsAgentCenterOpen] = useState(false);
 
   const { companies, selectedCompany, selectCompany } = useCompanyContext();
   const navigate = useNavigate();
@@ -509,6 +513,19 @@ export const SimpleAdminDashboard: React.FC = () => {
             />
 
             <button
+              onClick={() => setIsAgentCenterOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all"
+              title="Open Autonomous AI Agents Center"
+            >
+              <Bot className="w-4 h-4" />
+              <span>AI Agents</span>
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+            </button>
+
+            <button
               onClick={loadDashboardStats}
               disabled={statsLoading}
               className="p-2 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-100 transition-colors"
@@ -749,6 +766,20 @@ export const SimpleAdminDashboard: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Autonomous AI Agents Slide-over Drawer */}
+      <AgentCopilotCenter
+        isOpen={isAgentCenterOpen}
+        onClose={() => setIsAgentCenterOpen(false)}
+        onNavigateToEntity={(entityType) => {
+          setIsAgentCenterOpen(false);
+          if (entityType === 'invoice') navigate('/admin/invoices');
+          else if (entityType === 'quote') navigate('/admin/quotes');
+          else if (entityType === 'contract') navigate('/admin/contracts');
+          else if (entityType === 'expense') navigate('/admin/expenses');
+          else if (entityType === 'customer') navigate('/admin/customers');
+        }}
+      />
     </div>
   );
 };

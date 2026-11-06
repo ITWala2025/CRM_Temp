@@ -58,6 +58,10 @@ class InvoiceService {
   }
   // Countries
   async getCountries(): Promise<Country[]> {
+    if (isMockMode) {
+      return mockStore.get<Country>('countries');
+    }
+    
     if (!isSupabaseConfigured) {
       throw new Error('Database is not configured. Please contact the administrator.');
     }
@@ -85,6 +89,10 @@ class InvoiceService {
 
   // Company Settings
   async getCompanySettings(): Promise<CompanySettings[]> {
+    if (isMockMode) {
+      return mockStore.get<CompanySettings>('company_settings');
+    }
+
     try {
       const { data, error } = await supabase
         .from('company_settings')
@@ -107,6 +115,11 @@ class InvoiceService {
   }
 
   async getDefaultCompanySettings(): Promise<CompanySettings | null> {
+    if (isMockMode) {
+      const list = mockStore.get<CompanySettings>('company_settings');
+      return list.find((c) => c.is_default) || list[0] || null;
+    }
+
     const { data, error } = await supabase
       .from('company_settings')
       .select(`
@@ -202,6 +215,29 @@ class InvoiceService {
 
   // Invoice Settings
   async getInvoiceSettings(companySettingsId?: string): Promise<InvoiceSettings | null> {
+    if (isMockMode) {
+      return {
+        id: 'inv-set-default',
+        invoice_prefix: 'INV-2026-',
+        number_format: '{PREFIX}{YEAR}-{NUMBER}',
+        current_number: 104,
+        reset_annually: true,
+        financial_year_start_month: 4,
+        current_financial_year: '2026-27',
+        payment_terms: 'Net 30 days',
+        due_days: 30,
+        late_fee_percentage: 0,
+        notes: 'Thank you for your business.',
+        default_tax_rate: 18,
+        enable_gst: true,
+        template_name: 'modern',
+        currency_position: 'before',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    }
+
     let query = supabase
       .from('invoice_settings')
       .select('*')
@@ -435,6 +471,40 @@ class InvoiceService {
 
   // Customers
   async getCustomers(filters?: CustomerFilters, page: number = 1, perPage: number = 20): Promise<PaginatedResponse<Customer>> {
+    if (isMockMode) {
+      let list = mockStore.get<Customer>('customers');
+      if (filters) {
+        if (filters.search) {
+          const s = filters.search.toLowerCase();
+          list = list.filter((c) =>
+            (c.company_name && c.company_name.toLowerCase().includes(s)) ||
+            (c.contact_person && c.contact_person.toLowerCase().includes(s)) ||
+            (c.email && c.email.toLowerCase().includes(s)) ||
+            (c.customer_code && c.customer_code.toLowerCase().includes(s))
+          );
+        }
+        if (filters.country_id) {
+          list = list.filter((c) => c.country_id === filters.country_id);
+        }
+        if (filters.company_settings_id) {
+          list = list.filter((c) => !c.company_settings_id || c.company_settings_id === filters.company_settings_id);
+        }
+        if (filters.is_active !== undefined) {
+          list = list.filter((c) => c.is_active === filters.is_active);
+        }
+      }
+      const count = list.length;
+      const startIndex = (page - 1) * perPage;
+      const data = list.slice(startIndex, startIndex + perPage);
+      return {
+        data,
+        count,
+        page,
+        per_page: perPage,
+        total_pages: Math.max(1, Math.ceil(count / perPage)),
+      };
+    }
+
     let query = supabase
       .from('customers')
       .select(`
@@ -540,6 +610,10 @@ class InvoiceService {
   }
 
   async getCustomerById(id: string): Promise<Customer | null> {
+    if (isMockMode) {
+      return mockStore.getById<Customer>('customers', id) || null;
+    }
+
     const { data, error } = await supabase
       .from('customers')
       .select(`
@@ -594,6 +668,27 @@ class InvoiceService {
   }
 
   async createCustomer(customer: CreateCustomerData): Promise<Customer> {
+    if (isMockMode) {
+      const newCustomer: Customer = {
+        id: `cust-${Date.now()}`,
+        customer_code: `CUST-2026-${Math.floor(Math.random() * 900) + 100}`,
+        company_name: customer.company_name,
+        contact_person: customer.contact_person,
+        email: customer.email,
+        phone: customer.phone,
+        address_line1: customer.address_line1,
+        city: customer.city,
+        state: customer.state,
+        postal_code: customer.postal_code,
+        country_id: customer.country_id,
+        company_settings_id: customer.company_settings_id,
+        payment_terms: customer.payment_terms || 30,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return mockStore.insert<Customer>('customers', newCustomer);
+    }
     // Generate sequential customer_code: YYYY-XXXX (e.g. 2026-0001)
     const year = new Date().getFullYear();
     const prefix = `${year}-`;

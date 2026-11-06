@@ -1,4 +1,5 @@
-import { supabase } from '../config/supabase';
+import { supabase, isMockMode } from '../config/supabase';
+import { mockStore } from '../data/mockStore';
 
 // ==================== TYPES ====================
 
@@ -160,6 +161,10 @@ export const financeService = {
   // ==================== INCOME CATEGORIES ====================
 
   async getIncomeCategories(): Promise<IncomeCategory[]> {
+    if (isMockMode) {
+      return mockStore.get<IncomeCategory>('income_categories');
+    }
+
     const { data, error } = await supabase
       .from('income_categories')
       .select('*')
@@ -221,6 +226,13 @@ export const financeService = {
     reconciled?: boolean;
     company_settings_id?: string;
   }): Promise<ManualTransaction[]> {
+    if (isMockMode) {
+      let list = mockStore.get<ManualTransaction>('manual_transactions');
+      if (filters?.type) list = list.filter(t => t.transaction_type === filters.type);
+      if (filters?.company_settings_id) list = list.filter(t => !(t as any).company_settings_id || (t as any).company_settings_id === filters.company_settings_id);
+      return list;
+    }
+
     let query = supabase
       .from('manual_transactions')
       .select('*')
@@ -326,6 +338,51 @@ export const financeService = {
   // ==================== FINANCIAL REPORTS ====================
 
   async getIncomeData(startDate: string, endDate: string, companySettingsId?: string): Promise<FinancialTransaction[]> {
+    if (isMockMode) {
+      let invoices = mockStore.get<any>('invoices');
+      let manual = mockStore.get<any>('manual_transactions').filter((t: any) => t.transaction_type === 'income');
+      if (companySettingsId) {
+        invoices = invoices.filter((i: any) => i.company_settings_id === companySettingsId);
+        manual = manual.filter((m: any) => m.company_settings_id === companySettingsId);
+      }
+      const transactions: FinancialTransaction[] = [];
+      for (const inv of invoices) {
+        if (inv.payment_status === 'paid' || (inv.paid_amount && inv.paid_amount > 0)) {
+          transactions.push({
+            source_type: 'invoice',
+            source_id: inv.id,
+            reference_number: inv.invoice_number,
+            transaction_date: inv.invoice_date || new Date().toISOString().split('T')[0],
+            party_name: inv.customer?.company_name || 'Client',
+            party_type: 'customer',
+            gross_amount: inv.total_amount || 0,
+            tax_amount: inv.tax_amount || 0,
+            net_amount: inv.subtotal || inv.total_amount || 0,
+            currency: inv.currency_code || 'USD',
+            description: `Payment for Invoice ${inv.invoice_number}`,
+            category: 'Invoice Revenue',
+          });
+        }
+      }
+      for (const m of manual) {
+        transactions.push({
+          source_type: 'manual',
+          source_id: m.id,
+          reference_number: m.transaction_number,
+          transaction_date: m.transaction_date,
+          party_name: m.party_name || 'Partner',
+          party_type: m.party_type || 'other',
+          gross_amount: m.amount || 0,
+          tax_amount: m.tax_amount || 0,
+          net_amount: m.net_amount || m.amount || 0,
+          currency: m.currency || 'USD',
+          description: m.description || m.title,
+          category: m.category || 'Other Income',
+        });
+      }
+      return transactions;
+    }
+
     console.log('💰 getIncomeData called with date range:', { startDate, endDate, companySettingsId });
     const indianCompanyId = await this.getIndianCompanyId();
     const isIndian = !companySettingsId || (indianCompanyId && companySettingsId === indianCompanyId);
@@ -604,6 +661,27 @@ export const financeService = {
   },
 
   async getExpenseData(startDate: string, endDate: string, companySettingsId?: string): Promise<FinancialTransaction[]> {
+    if (isMockMode) {
+      let expenses = mockStore.get<any>('expenses');
+      if (companySettingsId) {
+        expenses = expenses.filter((e: any) => e.company_settings_id === companySettingsId);
+      }
+      return expenses.map((e: any) => ({
+        source_type: 'expense',
+        source_id: e.id,
+        reference_number: e.expense_number,
+        transaction_date: e.expense_date,
+        party_name: e.vendor_name || 'Vendor',
+        party_type: 'vendor',
+        gross_amount: e.total_amount || e.amount || 0,
+        tax_amount: e.tax_amount || 0,
+        net_amount: e.amount || 0,
+        currency: e.currency || 'USD',
+        description: e.description || e.title,
+        category: e.title || 'Operational Expense',
+      }));
+    }
+
     const indianCompanyId = await this.getIndianCompanyId();
     const isIndian = !companySettingsId || (indianCompanyId && companySettingsId === indianCompanyId);
 
