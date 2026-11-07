@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Search, Eye, Edit, Trash2, X, Users, RefreshCw, Globe, Building2, UserCheck, Contact, Compass, GitBranch, KeyRound } from 'lucide-react';
 import { invoiceService } from '../../services/invoiceService';
 import { CustomerAuthService } from '../../services/customerAuthService';
@@ -18,6 +18,7 @@ const SHARED_VALUE = '__shared__';
 
 const CustomerManagement: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { selectedCompany, companies } = useCompanyContext();
   const { showSuccess, showError } = useToast();
   const { confirm, dialogProps } = useConfirmDialog();
@@ -118,7 +119,7 @@ const CustomerManagement: React.FC = () => {
     }
   };
 
-  const openModal = (mode: 'view' | 'edit' | 'add', customer?: Customer) => {
+  const openModal = (mode: 'view' | 'edit' | 'add', customer?: Customer, shouldNavigate = true) => {
     setModalMode(mode);
     setSelectedCustomer(customer ?? null);
     if (mode === 'add') {
@@ -140,6 +141,9 @@ const CustomerManagement: React.FC = () => {
         credit_limit: 0,
         payment_terms: 30,
       });
+      if (shouldNavigate && location.pathname !== '/crm/customers/new') {
+        navigate('/crm/customers/new');
+      }
     } else if (customer) {
       setFormData({
         company_name: customer.company_name ?? '',
@@ -159,6 +163,12 @@ const CustomerManagement: React.FC = () => {
         credit_limit: Number(customer.credit_limit) || 0,
         payment_terms: Number(customer.payment_terms) || 30,
       });
+      if (shouldNavigate) {
+        const targetPath = mode === 'edit' ? `/crm/customers/${customer.id}/edit` : `/crm/customers/${customer.id}`;
+        if (location.pathname !== targetPath) {
+          navigate(targetPath);
+        }
+      }
     }
     setShowModal(true);
   };
@@ -167,7 +177,77 @@ const CustomerManagement: React.FC = () => {
     setShowModal(false);
     setSelectedCustomer(null);
     setModalLoading(false);
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+    if (cleanPath !== '/crm/customers') {
+      navigate('/crm/customers');
+    }
   };
+
+  const loadCustomerByIdAndOpen = useCallback(async (id: string, mode: 'view' | 'edit') => {
+    // Check if customer is already in local list
+    const found = customers.find(c => c.id === id);
+    if (found) {
+      openModal(mode, found, false);
+      return;
+    }
+    try {
+      setModalLoading(true);
+      setShowModal(true);
+      setModalMode(mode);
+      const fetched = await invoiceService.getCustomerById(id);
+      if (fetched) {
+        openModal(mode, fetched, false);
+      } else {
+        showError('Customer not found');
+        navigate('/crm/customers', { replace: true });
+      }
+    } catch (err) {
+      showError(`Failed to load customer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      navigate('/crm/customers', { replace: true });
+    } finally {
+      setModalLoading(false);
+    }
+  }, [customers, navigate, selectedCompany?.country_id, entityId]);
+
+  // Route synchronization for Add, View, and Edit customer models
+  useEffect(() => {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+
+    if (cleanPath === '/crm/customers/new' || cleanPath === '/crm/customers/add') {
+      if (!showModal || modalMode !== 'add') {
+        openModal('add', undefined, false);
+      }
+      return;
+    }
+
+    const editMatch = cleanPath.match(/^\/crm\/customers\/([^/]+)\/edit$/) ||
+                      cleanPath.match(/^\/crm\/customers\/edit\/([^/]+)$/);
+    if (editMatch) {
+      const id = editMatch[1];
+      if (id !== 'new' && id !== 'add') {
+        if (!showModal || modalMode !== 'edit' || selectedCustomer?.id !== id) {
+          loadCustomerByIdAndOpen(id, 'edit');
+        }
+        return;
+      }
+    }
+
+    const viewMatch = cleanPath.match(/^\/crm\/customers\/(?:view\/)?([^/]+)$/);
+    if (viewMatch) {
+      const id = viewMatch[1];
+      if (id !== 'new' && id !== 'add') {
+        if (!showModal || modalMode !== 'view' || selectedCustomer?.id !== id) {
+          loadCustomerByIdAndOpen(id, 'view');
+        }
+        return;
+      }
+    }
+
+    if (showModal) {
+      setShowModal(false);
+      setSelectedCustomer(null);
+    }
+  }, [location.pathname, customers, loadCustomerByIdAndOpen]);
 
   const handleChange = (field: keyof CreateCustomerData, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -706,7 +786,27 @@ const CustomerManagement: React.FC = () => {
               </div>
             </div>
 
-            {modalMode !== 'view' && (
+            {modalMode === 'view' ? (
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+                >
+                  Close
+                </button>
+                {selectedCustomer && (
+                  <button
+                    type="button"
+                    onClick={() => openModal('edit', selectedCustomer)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Customer
+                  </button>
+                )}
+              </div>
+            ) : (
               <div className="flex justify-end space-x-3 mt-6">
                 <button onClick={closeModal}
                   className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md text-sm font-medium hover:from-red-600 hover:to-red-700">

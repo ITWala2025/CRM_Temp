@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -44,6 +45,8 @@ import type {
 } from '../../types/contract';
 
 const ContractManagement: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [stats, setStats] = useState<ContractStatistics | null>(null);
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
@@ -85,6 +88,53 @@ const ContractManagement: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [currentPage, searchTerm, filters, selectedCompany]);
+
+  // Route synchronization for Create, View, and Edit contract models and tabs
+  useEffect(() => {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+
+    if (cleanPath === '/crm/contracts/new' || cleanPath === '/crm/contracts/create') {
+      if (!showCreateModal) {
+        handleCreateContract(false);
+      }
+      return;
+    }
+
+    const editMatch = cleanPath.match(/^\/crm\/contracts\/([^/]+)\/edit$/) ||
+                      cleanPath.match(/^\/crm\/contracts\/edit\/([^/]+)$/);
+    if (editMatch) {
+      const id = editMatch[1];
+      if (id !== 'new' && id !== 'create') {
+        if (!showEditModal || selectedContract?.id !== id) {
+          handleEditContract(id, false);
+        }
+        return;
+      }
+    }
+
+    const viewMatch = cleanPath.match(/^\/crm\/contracts\/(?:view\/)?([^/]+)$/);
+    if (viewMatch) {
+      const id = viewMatch[1];
+      if (id !== 'new' && id !== 'create' && id !== 'list' && id !== 'templates') {
+        if (!showViewModal || selectedContract?.id !== id) {
+          handleViewContract(id, false);
+        }
+        return;
+      }
+    }
+
+    if (showCreateModal) setShowCreateModal(false);
+    if (showViewModal) setShowViewModal(false);
+    if (showEditModal) setShowEditModal(false);
+
+    if (cleanPath === '/crm/contracts/templates') {
+      if (activeTab !== 'templates') setActiveTab('templates');
+    } else if (cleanPath === '/crm/contracts/list') {
+      if (activeTab !== 'contracts') setActiveTab('contracts');
+    } else if (cleanPath === '/crm/contracts') {
+      if (activeTab !== 'dashboard') setActiveTab('dashboard');
+    }
+  }, [location.pathname, selectedCompany, companySettings]);
 
   const loadData = async () => {
     try {
@@ -131,11 +181,15 @@ const ContractManagement: React.FC = () => {
   };
 
   // Handle contract creation
-  const handleCreateContract = () => {
+  const handleCreateContract = (shouldNavigate = true) => {
     const company = selectedCompany || companySettings;
     if (!company) {
       showError('No company selected. Please select a company first.');
       return;
+    }
+
+    if (shouldNavigate && location.pathname !== '/crm/contracts/new') {
+      navigate('/crm/contracts/new');
     }
 
     let fullAddress = '';
@@ -195,6 +249,7 @@ const ContractManagement: React.FC = () => {
       await contractAuditService.log(created.id, 'create', 'contract', undefined, created.contract_number);
       showSuccess('Contract created successfully');
       setShowCreateModal(false);
+      navigate('/crm/contracts/list');
       await loadData();
     } catch (err) {
       console.error('Error creating contract:', err);
@@ -204,8 +259,14 @@ const ContractManagement: React.FC = () => {
   };
 
   // Handle contract view
-  const handleViewContract = async (contractId: string) => {
+  const handleViewContract = async (contractId: string, shouldNavigate = true) => {
     try {
+      if (shouldNavigate) {
+        const target = `/crm/contracts/${contractId}`;
+        if (location.pathname !== target) {
+          navigate(target);
+        }
+      }
       setLoading(true);
       const [contract, logs] = await Promise.all([
         contractService.getContractById(contractId),
@@ -218,6 +279,7 @@ const ContractManagement: React.FC = () => {
         setShowViewModal(true);
       } else {
         showError('Contract not found');
+        navigate('/crm/contracts/list', { replace: true });
       }
     } catch (err) {
       console.error('Error loading contract:', err);
@@ -228,8 +290,14 @@ const ContractManagement: React.FC = () => {
   };
 
   // Handle contract edit
-  const handleEditContract = async (contractId: string) => {
+  const handleEditContract = async (contractId: string, shouldNavigate = true) => {
     try {
+      if (shouldNavigate) {
+        const target = `/crm/contracts/${contractId}/edit`;
+        if (location.pathname !== target) {
+          navigate(target);
+        }
+      }
       setLoading(true);
       const contract = await contractService.getContractById(contractId);
       if (contract) {
@@ -237,6 +305,7 @@ const ContractManagement: React.FC = () => {
         setShowEditModal(true);
       } else {
         showError('Contract not found');
+        navigate('/crm/contracts/list', { replace: true });
       }
     } catch (err) {
       console.error('Error loading contract:', err);
@@ -255,6 +324,7 @@ const ContractManagement: React.FC = () => {
       showSuccess('Contract updated successfully');
       setShowEditModal(false);
       setSelectedContract(null);
+      navigate('/crm/contracts/list');
       await loadData();
     } catch (err) {
       console.error('Error updating contract:', err);
@@ -650,7 +720,7 @@ const ContractManagement: React.FC = () => {
             </button>
           </div>
           <button
-            onClick={handleCreateContract}
+            onClick={() => handleCreateContract()}
             className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -708,7 +778,10 @@ const ContractManagement: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => {
+                setActiveTab('dashboard');
+                navigate('/crm/contracts');
+              }}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'dashboard'
                   ? 'border-blue-500 text-blue-600'
@@ -718,7 +791,10 @@ const ContractManagement: React.FC = () => {
               Dashboard
             </button>
             <button
-              onClick={() => setActiveTab('contracts')}
+              onClick={() => {
+                setActiveTab('contracts');
+                navigate('/crm/contracts/list');
+              }}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'contracts'
                   ? 'border-blue-500 text-blue-600'
@@ -728,7 +804,10 @@ const ContractManagement: React.FC = () => {
               Contracts
             </button>
             <button
-              onClick={() => setActiveTab('templates')}
+              onClick={() => {
+                setActiveTab('templates');
+                navigate('/crm/contracts/templates');
+              }}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'templates'
                   ? 'border-blue-500 text-blue-600'
@@ -762,7 +841,13 @@ const ContractManagement: React.FC = () => {
         <CreateContractModal
           initialData={formData}
           onSave={handleSaveNewContract}
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => {
+            setShowCreateModal(false);
+            const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+            if (cleanPath.startsWith('/crm/contracts/new') || cleanPath.startsWith('/crm/contracts/create')) {
+              navigate('/crm/contracts/list');
+            }
+          }}
         />
       )}
 
@@ -774,6 +859,10 @@ const ContractManagement: React.FC = () => {
             setShowViewModal(false);
             setSelectedContract(null);
             setAuditLogs([]);
+            const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+            if (cleanPath.startsWith('/crm/contracts/') && cleanPath !== '/crm/contracts/list' && cleanPath !== '/crm/contracts/templates') {
+              navigate('/crm/contracts/list');
+            }
           }}
         />
       )}
@@ -848,6 +937,10 @@ const ContractManagement: React.FC = () => {
           onClose={() => {
             setShowEditModal(false);
             setSelectedContract(null);
+            const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+            if (cleanPath.startsWith('/crm/contracts/') && cleanPath !== '/crm/contracts/list' && cleanPath !== '/crm/contracts/templates') {
+              navigate('/crm/contracts/list');
+            }
           }}
         />
       )}

@@ -48,14 +48,28 @@ export function App() {
                 <Route path="/invoices/list" element={<Navigate to="/crm/invoices/list" replace />} />
                 <Route path="/invoices/*" element={<Navigate to="/crm/invoices" replace />} />
                 <Route path="/invoices" element={<Navigate to="/crm/invoices" replace />} />
+                <Route path="/quotes/*" element={<Navigate to="/crm/quotes" replace />} />
                 <Route path="/quotes" element={<Navigate to="/crm/quotes" replace />} />
+                <Route path="/contracts/*" element={<Navigate to="/crm/contracts" replace />} />
                 <Route path="/contracts" element={<Navigate to="/crm/contracts" replace />} />
+                <Route path="/customers/*" element={<Navigate to="/crm/customers" replace />} />
                 <Route path="/customers" element={<Navigate to="/crm/customers" replace />} />
+                <Route path="/customer-360/*" element={<Navigate to="/crm/customer-360" replace />} />
                 <Route path="/customer-360" element={<Navigate to="/crm/customer-360" replace />} />
+                <Route path="/rate-cards/*" element={<Navigate to="/crm/rate-cards" replace />} />
                 <Route path="/rate-cards" element={<Navigate to="/crm/rate-cards" replace />} />
+                <Route path="/income/*" element={<Navigate to="/crm/income" replace />} />
                 <Route path="/income" element={<Navigate to="/crm/income" replace />} />
+                <Route path="/expenses/*" element={<Navigate to="/crm/expenses" replace />} />
                 <Route path="/expenses" element={<Navigate to="/crm/expenses" replace />} />
+                <Route path="/finance/*" element={<Navigate to="/crm/finance" replace />} />
                 <Route path="/finance" element={<Navigate to="/crm/finance" replace />} />
+                <Route path="/tax-reports/*" element={<Navigate to="/crm/tax-reports" replace />} />
+                <Route path="/tax-reports" element={<Navigate to="/crm/tax-reports" replace />} />
+                <Route path="/vat/*" element={<Navigate to="/crm/tax-reports" replace />} />
+                <Route path="/vat" element={<Navigate to="/crm/tax-reports" replace />} />
+                <Route path="/gst/*" element={<Navigate to="/crm/tax-reports" replace />} />
+                <Route path="/gst" element={<Navigate to="/crm/tax-reports" replace />} />
                 <Route path="/roles" element={<Navigate to="/crm/roles" replace />} />
                 <Route path="/settings" element={<Navigate to="/crm/settings" replace />} />
 

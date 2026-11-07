@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { 
   Plus, 
@@ -54,6 +55,8 @@ interface QuoteManagementProps {
 }
 
 const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -128,6 +131,59 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     setCurrentPage(1);
   }, [activeTab]);
 
+  // Synchronize route with Create, View, and Edit quote models and tabs
+  useEffect(() => {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+
+    if (cleanPath === '/crm/quotes/new' || cleanPath === '/crm/quotes/create') {
+      if (showQuoteModal) {
+        setShowQuoteModal(false);
+      }
+      if (activeTab !== 'create-quote') {
+        openCreateQuoteTab(false);
+      }
+      return;
+    }
+
+    const editMatch = cleanPath.match(/^\/crm\/quotes\/([^/]+)\/edit$/) ||
+                      cleanPath.match(/^\/crm\/quotes\/edit\/([^/]+)$/);
+    if (editMatch) {
+      const id = editMatch[1];
+      if (id !== 'new' && id !== 'create') {
+        if (!showQuoteModal || quoteModalMode !== 'edit' || selectedQuote?.id !== id) {
+          handleEditQuote(id, false);
+        }
+        return;
+      }
+    }
+
+    const viewMatch = cleanPath.match(/^\/crm\/quotes\/(?:view\/)?([^/]+)$/);
+    if (viewMatch) {
+      const id = viewMatch[1];
+      if (id !== 'new' && id !== 'create' && id !== 'list') {
+        if (!showQuoteModal || quoteModalMode !== 'view' || selectedQuote?.id !== id) {
+          handleViewQuote(id, false);
+        }
+        return;
+      }
+    }
+
+    if (showQuoteModal) {
+      setShowQuoteModal(false);
+      setSelectedQuote(null);
+    }
+
+    if (cleanPath === '/crm/quotes/list') {
+      if (activeTab !== 'quotes') {
+        setActiveTab('quotes');
+      }
+    } else if (cleanPath === '/crm/quotes') {
+      if (activeTab !== 'dashboard') {
+        setActiveTab('dashboard');
+      }
+    }
+  }, [location.pathname]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -181,8 +237,11 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     }
   };
 
-  const openCreateQuoteTab = async () => {
+  const openCreateQuoteTab = async (shouldNavigate = true) => {
     setActiveTab('create-quote');
+    if (shouldNavigate && location.pathname !== '/crm/quotes/new') {
+      navigate('/crm/quotes/new');
+    }
     await loadData();
     
     let defaultTermsContent = '';
@@ -253,6 +312,10 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     setGeneratedQuoteNumber('');
     setShowQuotePreview(false);
     setModalLoading(false);
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+    if (cleanPath !== '/crm/quotes/list' && cleanPath !== '/crm/quotes') {
+      navigate('/crm/quotes/list');
+    }
   };
 
   const handleQuoteFormChange = (field: keyof CreateQuoteData, value: string | CreateQuoteItemData[]) => {
@@ -565,6 +628,7 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
         await quoteService.createQuote(finalQuoteData, finalQuoteNumber!, selectedCompany?.id);
         showSuccess(`Quotation ${finalQuoteNumber!} created successfully!`);
         setActiveTab('quotes');
+        navigate('/crm/quotes/list');
       } else if (quoteModalMode === 'edit' && selectedQuote) {
         const updateData = {
           ...quoteFormData,
@@ -605,11 +669,18 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     }
   };
 
-  const handleViewQuote = async (quote: Quote) => {
+  const handleViewQuote = async (quoteOrId: Quote | string, shouldNavigate = true) => {
     try {
+      const quoteId = typeof quoteOrId === 'string' ? quoteOrId : quoteOrId.id;
+      if (shouldNavigate) {
+        const target = `/crm/quotes/${quoteId}`;
+        if (location.pathname !== target) {
+          navigate(target);
+        }
+      }
       // Load necessary data for viewing
       const [fullQuote, customersData] = await Promise.all([
-        quoteService.getQuoteById(quote.id),
+        quoteService.getQuoteById(quoteId),
         customers.length === 0 ? invoiceService.getCustomers({ company_settings_id: selectedCompany?.id }, 1, 1000) : Promise.resolve({ data: customers })
       ]);
       
@@ -668,6 +739,9 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
         setQuoteModalMode('view');
         setShowQuoteModal(true);
         setShowQuotePreview(true);
+      } else {
+        showError('Quote not found');
+        navigate('/crm/quotes/list', { replace: true });
       }
     } catch (error) {
       console.error('Failed to load quote details:', error);
@@ -675,14 +749,22 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
     }
   };
 
-  const handleEditQuote = async (quote: Quote) => {
+  const handleEditQuote = async (quoteOrId: Quote | string, shouldNavigate = true) => {
     try {
       setModalLoading(true);
-      const fullQuote = await quoteService.getQuoteById(quote.id);
+      const quoteId = typeof quoteOrId === 'string' ? quoteOrId : quoteOrId.id;
+      if (shouldNavigate) {
+        const target = `/crm/quotes/${quoteId}/edit`;
+        if (location.pathname !== target) {
+          navigate(target);
+        }
+      }
+      const fullQuote = await quoteService.getQuoteById(quoteId);
       
       if (!fullQuote) {
         showError('Quote not found');
         setModalLoading(false);
+        navigate('/crm/quotes/list', { replace: true });
         return;
       }
       
@@ -2038,7 +2120,10 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
           onAddItem={addQuoteItem}
           onRemoveItem={removeQuoteItem}
           onSaveQuote={handleSaveQuote}
-          onCloseQuote={() => setActiveTab('quotes')}
+          onCloseQuote={() => {
+            setActiveTab('quotes');
+            navigate('/crm/quotes/list');
+          }}
           onShowPreview={handleShowPreview}
           onTermsChange={handleTermsChange}
           onTermsTemplateSelect={handleTermsTemplateSelect}
@@ -2357,7 +2442,10 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
             <h1 className="text-xl font-semibold text-gray-900">Quotation Management</h1>
             <nav className="flex space-x-4">
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  navigate('/crm/quotes');
+                }}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   activeTab === 'dashboard'
                     ? 'bg-emerald-100 text-emerald-700'
@@ -2367,7 +2455,10 @@ const QuoteManagement: React.FC<QuoteManagementProps> = ({ onBackToDashboard }) 
                 Dashboard
               </button>
               <button
-                onClick={() => setActiveTab('quotes')}
+                onClick={() => {
+                  setActiveTab('quotes');
+                  navigate('/crm/quotes/list');
+                }}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   activeTab === 'quotes'
                     ? 'bg-emerald-100 text-emerald-700'

@@ -19,8 +19,10 @@ import {
   FileSignature,
   Bot,
   ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import AgentCopilotCenter from './AgentCopilotCenter';
+import { copilotSettingsService } from '../../modules/agent-copilot';
 import { simpleAuth, SimpleUser } from '../../utils/simpleAuth';
 import { isSupabaseConfigured } from '../../config/supabase';
 import { invoiceService } from '../../services/invoiceService';
@@ -51,6 +53,7 @@ const FinanceManagement = lazy(() => import('./FinanceManagement'));
 const IncomeManagement = lazy(() => import('./IncomeManagement'));
 const InvoiceSettings = lazy(() => import('./InvoiceSettings'));
 const RoleManagement = lazy(() => import('./roles/RoleManagement'));
+const TaxReportingDashboard = lazy(() => import('../finance/tax/TaxReportingDashboard'));
 
 type ActiveView =
   | 'dashboard'
@@ -63,6 +66,7 @@ type ActiveView =
   | 'income'
   | 'expenses'
   | 'finance'
+  | 'tax-reports'
   | 'roles'
   | 'settings';
 
@@ -88,6 +92,16 @@ export const SimpleAdminDashboard: React.FC = () => {
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [recentTimeline, setRecentTimeline] = useState<CustomerActivityTimelineItem[]>([]);
   const [isAgentCenterOpen, setIsAgentCenterOpen] = useState(false);
+  const [isAiAgentsEnabled, setIsAiAgentsEnabled] = useState<boolean>(() =>
+    copilotSettingsService.isModuleEnabled()
+  );
+
+  useEffect(() => {
+    const unsub = copilotSettingsService.subscribe((s) => {
+      setIsAiAgentsEnabled(s.enabled);
+    });
+    return unsub;
+  }, []);
 
   const { companies, selectedCompany, selectCompany } = useCompanyContext();
   const navigate = useNavigate();
@@ -104,6 +118,7 @@ export const SimpleAdminDashboard: React.FC = () => {
     if (path.startsWith('/crm/income')) return 'income';
     if (path.startsWith('/crm/expenses')) return 'expenses';
     if (path.startsWith('/crm/finance')) return 'finance';
+    if (path.startsWith('/crm/tax') || path.startsWith('/crm/vat') || path.startsWith('/crm/gst')) return 'tax-reports';
     if (path.startsWith('/crm/roles')) return 'roles';
     if (path.startsWith('/crm/settings')) return 'settings';
     return 'dashboard';
@@ -191,6 +206,8 @@ export const SimpleAdminDashboard: React.FC = () => {
         return <ExpenseManagement />;
       case 'finance':
         return <FinanceManagement />;
+      case 'tax-reports':
+        return <TaxReportingDashboard />;
       case 'roles':
         return <RoleManagement />;
       case 'settings':
@@ -422,6 +439,19 @@ export const SimpleAdminDashboard: React.FC = () => {
                     {sidebarOpen && <span className="ml-3">Finance & P&L</span>}
                   </button>
                 </li>
+
+                <li>
+                  <button
+                    onClick={() => navigate('/crm/tax-reports')}
+                    className={`w-full flex items-center ${!sidebarOpen ? 'justify-center' : ''} px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeView === 'tax-reports' ? 'bg-indigo-600/30 text-indigo-400 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                    title={!sidebarOpen ? 'Tax & VAT/GST Compliance' : undefined}
+                  >
+                    <Scale className="w-5 h-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="ml-3">Tax & VAT / GST</span>}
+                  </button>
+                </li>
               </ul>
             )}
           </div>
@@ -517,18 +547,32 @@ export const SimpleAdminDashboard: React.FC = () => {
               onChange={selectCompany}
             />
 
-            <button
-              onClick={() => setIsAgentCenterOpen(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all"
-              title="Open Autonomous AI Agents Center"
-            >
-              <Bot className="w-4 h-4" />
-              <span>AI Agents</span>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-            </button>
+            {isAiAgentsEnabled ? (
+              <button
+                onClick={() => setIsAgentCenterOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all"
+                title="Open Autonomous AI Agents Center"
+              >
+                <Bot className="w-4 h-4" />
+                <span>AI Agents</span>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsAgentCenterOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-all border border-slate-200"
+                title="Autonomous AI Agents Module disabled for this client (Unpaid). Click to review entitlement."
+              >
+                <Bot className="w-4 h-4 text-slate-400" />
+                <span>AI Agents</span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 text-slate-600">
+                  OFF
+                </span>
+              </button>
+            )}
 
             <button
               onClick={loadDashboardStats}
@@ -776,13 +820,15 @@ export const SimpleAdminDashboard: React.FC = () => {
       <AgentCopilotCenter
         isOpen={isAgentCenterOpen}
         onClose={() => setIsAgentCenterOpen(false)}
+        companyId={selectedCompany?.id}
         onNavigateToEntity={(entityType: string) => {
           setIsAgentCenterOpen(false);
           if (entityType === 'invoice') navigate('/crm/invoices');
           else if (entityType === 'quote') navigate('/crm/quotes');
           else if (entityType === 'contract') navigate('/crm/contracts');
           else if (entityType === 'expense') navigate('/crm/expenses');
-          else if (entityType === 'customer') navigate('/crm/customers');
+          else if (entityType === 'customer' || entityType === 'customer-360') navigate('/crm/customer-360');
+          else if (entityType === 'settings') navigate('/crm/settings');
         }}
       />
     </div>

@@ -9,8 +9,10 @@ import {
   X,
   Save,
   CreditCard,
-  Settings
+  Settings,
+  Bot
 } from 'lucide-react';
+import { AgentSettingsCard } from '../../modules/agent-copilot';
 import { invoiceService } from '../../services/invoiceService';
 import { useToast } from '../ui/ToastProvider';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -35,6 +37,7 @@ const InvoiceSettings: React.FC = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'all' | 'company' | 'branding' | 'agents'>('all');
 
   const { showSuccess, showError, showWarning } = useToast();
   const { confirm, dialogProps } = useConfirmDialog();
@@ -1158,16 +1161,69 @@ const InvoiceSettings: React.FC = () => {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 sm:py-0 sm:h-16 gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Settings & Entitlements</h1>
+              <p className="text-xs text-gray-500">Configure corporate identity, billing templates, and autonomous agent modules</p>
+            </div>
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0">
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('all')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  activeSettingsTab === 'all'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('company')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  activeSettingsTab === 'company'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Company & Invoices
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('branding')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  activeSettingsTab === 'branding'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                PDF Branding
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSettingsTab('agents')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 ${
+                  activeSettingsTab === 'agents'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>AI Agents Module</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Company Settings */}
-        <div className="bg-white rounded-lg shadow">
+        {/* Company & Invoice Settings */}
+        {(activeSettingsTab === 'all' || activeSettingsTab === 'company') && (
+          <>
+            {/* Company Settings */}
+            <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Company Information</h3>
             <div className="flex space-x-2">
@@ -1436,9 +1492,11 @@ const InvoiceSettings: React.FC = () => {
             )}
           </div>
         </div>
+          </>
+        )}
 
         {/* PDF Branding Settings */}
-        {companySettings.length > 0 && (
+        {(activeSettingsTab === 'all' || activeSettingsTab === 'branding') && companySettings.length > 0 && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">PDF Invoice Branding</h3>
@@ -1461,6 +1519,13 @@ const InvoiceSettings: React.FC = () => {
               />
             </div>
           </div>
+        )}
+
+        {/* Autonomous AI Agents & Copilot Module Card */}
+        {(activeSettingsTab === 'all' || activeSettingsTab === 'agents') && (
+          <AgentSettingsCard
+            onSaved={() => showSuccess('Settings Updated', 'AI Copilot client configuration has been saved.')}
+          />
         )}
       </main>
 

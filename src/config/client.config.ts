@@ -39,6 +39,7 @@ export interface ClientConfig {
     expenses: boolean;
     finance: boolean;
     rateCards: boolean;
+    aiAgents: boolean;
   };
 }
 
@@ -71,6 +72,7 @@ export const clientConfig: ClientConfig = {
     expenses: true,
     finance: true,
     rateCards: true,
+    aiAgents: true,
   },
 };
 

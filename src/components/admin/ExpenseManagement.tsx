@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus, Search, Edit, Trash2, Eye, X, Filter, Download, Upload,
   CheckCircle, XCircle, Clock, DollarSign, Receipt, Building2,
@@ -83,6 +84,8 @@ const formatDate = (date: string) => {
 };
 
 const ExpenseManagement: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showError, showSuccess } = useToast();
   const { confirm, dialogProps } = useConfirmDialog();
   const { startAction, endAction } = useActionProgress();
@@ -206,16 +209,200 @@ const ExpenseManagement: React.FC = () => {
     setSearchTerm('');
   };
 
-  const openModal = (type: ModalType, mode: 'create' | 'edit' | 'view', item?: any) => {
+  const openModal = (type: ModalType, mode: 'create' | 'edit' | 'view', item?: any, shouldNavigate = true) => {
     setModalType(type);
     setModalMode(mode);
     setSelectedItem(item || null);
+
+    if (shouldNavigate) {
+      if (type === 'expense') {
+        if (mode === 'create') {
+          if (location.pathname !== '/crm/expenses/new') {
+            navigate('/crm/expenses/new');
+          }
+        } else if (item) {
+          const target = mode === 'edit' ? `/crm/expenses/${item.id}/edit` : `/crm/expenses/${item.id}`;
+          if (location.pathname !== target) {
+            navigate(target);
+          }
+        }
+      } else if (type === 'vendor') {
+        if (mode === 'create') {
+          if (location.pathname !== '/crm/expenses/vendors/new') {
+            navigate('/crm/expenses/vendors/new');
+          }
+        } else if (item) {
+          const target = mode === 'edit' ? `/crm/expenses/vendors/${item.id}/edit` : `/crm/expenses/vendors/${item.id}`;
+          if (location.pathname !== target) {
+            navigate(target);
+          }
+        }
+      }
+    }
   };
 
   const closeModal = () => {
+    const currentType = modalType;
     setModalType(null);
     setSelectedItem(null);
+
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+    if (currentType === 'vendor' || cleanPath.startsWith('/crm/expenses/vendors/')) {
+      if (cleanPath !== '/crm/expenses/vendors') {
+        navigate('/crm/expenses/vendors');
+      }
+    } else if (cleanPath !== '/crm/expenses' && cleanPath !== '/crm/expenses/vendors' && cleanPath !== '/crm/expenses/categories') {
+      navigate('/crm/expenses');
+    }
   };
+
+  const loadExpenseByIdAndOpen = useCallback(async (id: string, mode: 'view' | 'edit') => {
+    const found = expenses.find(e => e.id === id);
+    if (found) {
+      openModal('expense', mode, found, false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const fetched = await expenseService.getExpenseById(id);
+      if (fetched) {
+        openModal('expense', mode, fetched, false);
+      } else {
+        showError('Expense not found');
+        navigate('/crm/expenses', { replace: true });
+      }
+    } catch (err) {
+      console.error('Failed to load expense:', err);
+      showError('Failed to load expense');
+      navigate('/crm/expenses', { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  }, [expenses, navigate]);
+
+  const loadVendorByIdAndOpen = useCallback(async (id: string, mode: 'view' | 'edit') => {
+    const found = vendors.find(v => v.id === id);
+    if (found) {
+      openModal('vendor', mode, found, false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const fetched = await expenseService.getVendorById(id);
+      if (fetched) {
+        openModal('vendor', mode, fetched, false);
+      } else {
+        showError('Vendor not found');
+        navigate('/crm/expenses/vendors', { replace: true });
+      }
+    } catch (err) {
+      console.error('Failed to load vendor:', err);
+      showError('Failed to load vendor');
+      navigate('/crm/expenses/vendors', { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  }, [vendors, navigate]);
+
+  // Route synchronization for all 3 tabs and expense/vendor create, view, edit models
+  useEffect(() => {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+
+    // 1. Vendor routes
+    if (cleanPath === '/crm/expenses/vendors/new' || cleanPath === '/crm/expenses/vendors/add') {
+      if (activeTab !== 'vendors') setActiveTab('vendors');
+      if (modalType !== 'vendor' || modalMode !== 'create') {
+        openModal('vendor', 'create', undefined, false);
+      }
+      return;
+    }
+
+    const vendorEditMatch = cleanPath.match(/^\/crm\/expenses\/vendors\/([^/]+)\/edit$/) ||
+                            cleanPath.match(/^\/crm\/expenses\/vendors\/edit\/([^/]+)$/);
+    if (vendorEditMatch) {
+      const id = vendorEditMatch[1];
+      if (id !== 'new' && id !== 'add') {
+        if (activeTab !== 'vendors') setActiveTab('vendors');
+        if (modalType !== 'vendor' || modalMode !== 'edit' || selectedItem?.id !== id) {
+          loadVendorByIdAndOpen(id, 'edit');
+        }
+        return;
+      }
+    }
+
+    const vendorViewMatch = cleanPath.match(/^\/crm\/expenses\/vendors\/(?:view\/)?([^/]+)$/);
+    if (vendorViewMatch) {
+      const id = vendorViewMatch[1];
+      if (id !== 'new' && id !== 'add') {
+        if (activeTab !== 'vendors') setActiveTab('vendors');
+        if (modalType !== 'vendor' || modalMode !== 'view' || selectedItem?.id !== id) {
+          loadVendorByIdAndOpen(id, 'view');
+        }
+        return;
+      }
+    }
+
+    if (cleanPath === '/crm/expenses/vendors') {
+      if (activeTab !== 'vendors') setActiveTab('vendors');
+      if (modalType) {
+        setModalType(null);
+        setSelectedItem(null);
+      }
+      return;
+    }
+
+    // 2. Categories route
+    if (cleanPath === '/crm/expenses/categories') {
+      if (activeTab !== 'categories') setActiveTab('categories');
+      if (modalType) {
+        setModalType(null);
+        setSelectedItem(null);
+      }
+      return;
+    }
+
+    // 3. Expense routes
+    if (cleanPath === '/crm/expenses/new' || cleanPath === '/crm/expenses/add') {
+      if (activeTab !== 'expenses') setActiveTab('expenses');
+      if (modalType !== 'expense' || modalMode !== 'create') {
+        openModal('expense', 'create', undefined, false);
+      }
+      return;
+    }
+
+    const expenseEditMatch = cleanPath.match(/^\/crm\/expenses\/([^/]+)\/edit$/) ||
+                             cleanPath.match(/^\/crm\/expenses\/edit\/([^/]+)$/);
+    if (expenseEditMatch) {
+      const id = expenseEditMatch[1];
+      if (id !== 'new' && id !== 'add' && id !== 'vendors' && id !== 'categories') {
+        if (activeTab !== 'expenses') setActiveTab('expenses');
+        if (modalType !== 'expense' || modalMode !== 'edit' || selectedItem?.id !== id) {
+          loadExpenseByIdAndOpen(id, 'edit');
+        }
+        return;
+      }
+    }
+
+    const expenseViewMatch = cleanPath.match(/^\/crm\/expenses\/(?:view\/)?([^/]+)$/);
+    if (expenseViewMatch) {
+      const id = expenseViewMatch[1];
+      if (id !== 'new' && id !== 'add' && id !== 'list' && id !== 'vendors' && id !== 'categories') {
+        if (activeTab !== 'expenses') setActiveTab('expenses');
+        if (modalType !== 'expense' || modalMode !== 'view' || selectedItem?.id !== id) {
+          loadExpenseByIdAndOpen(id, 'view');
+        }
+        return;
+      }
+    }
+
+    if (cleanPath === '/crm/expenses' || cleanPath === '/crm/expenses/list') {
+      if (activeTab !== 'expenses') setActiveTab('expenses');
+      if (modalType) {
+        setModalType(null);
+        setSelectedItem(null);
+      }
+    }
+  }, [location.pathname, expenses, vendors, loadExpenseByIdAndOpen, loadVendorByIdAndOpen]);
 
   const handleSaveExpense = async (data: CreateExpenseData) => {
     try {
@@ -468,7 +655,13 @@ const ExpenseManagement: React.FC = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
+                  onClick={() => {
+                    setActiveTab(tab.id as TabType);
+                    const path = tab.id === 'expenses' ? '/crm/expenses' : `/crm/expenses/${tab.id}`;
+                    if (location.pathname !== path) {
+                      navigate(path);
+                    }
+                  }}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-orange-600 text-orange-600'
@@ -814,14 +1007,23 @@ const ExpenseManagement: React.FC = () => {
                     </div>
                     <div className="flex gap-1">
                       <button
+                        onClick={() => openModal('vendor', 'view', vendor)}
+                        className="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
+                        title="View Vendor"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => openModal('vendor', 'edit', vendor)}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                        title="Edit Vendor"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete('vendor', vendor.id)}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                        title="Delete Vendor"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import {
   TrendingUp, TrendingDown, DollarSign, PieChart, Calendar, Download,
   Plus, Search, Filter, X, ArrowUpRight, ArrowDownRight, Building2,
   CreditCard, FileText, Receipt, Users, AlertTriangle, CheckCircle,
-  BarChart3, Wallet, RefreshCw, Eye, Edit, Trash2, ChevronLeft, ChevronRight, Printer
+  BarChart3, Wallet, RefreshCw, Eye, Edit, Trash2, ChevronLeft, ChevronRight, Printer, Scale
 } from 'lucide-react';
 import {
   financeService,
@@ -74,12 +75,35 @@ const formatDate = (date: string) => {
 };
 
 const FinanceManagement: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const tabFromPath = (pathname: string): ViewType => {
+    const cleanPath = pathname.replace(/^\/admin/, '/crm');
+    if (cleanPath === '/crm/finance/transactions') return 'transactions';
+    if (cleanPath === '/crm/finance/reports') return 'reports';
+    return 'dashboard';
+  };
+
   const { showError, showSuccess } = useToast();
   const { confirm, dialogProps } = useConfirmDialog();
   const { selectedCompany } = useCompanyContext();
   const activeCurrency = getCompanyCurrency(selectedCompany);
   const fmtCurr = (amount: number, currencyCode?: string) => formatCurrency(amount, currencyCode || activeCurrency);
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType>(() => tabFromPath(window.location.pathname));
+
+  useEffect(() => {
+    const nextView = tabFromPath(location.pathname);
+    setActiveView(prev => (prev === nextView ? prev : nextView));
+  }, [location.pathname]);
+
+  const handleTabChange = (view: ViewType) => {
+    setActiveView(view);
+    const targetPath = view === 'dashboard' ? '/crm/finance' : `/crm/finance/${view}`;
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [periodType, setPeriodType] = useState<PeriodType>('monthly');
   
@@ -715,6 +739,15 @@ const FinanceManagement: React.FC = () => {
           </h1>
           <p className="text-gray-600 mt-1">Track income, expenses, and financial health</p>
         </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => navigate('/crm/tax-reports')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
+          >
+            <Scale className="w-4 h-4" />
+            <span>Tax & VAT / GST Reports</span>
+          </button>
+        </div>
       </div>
 
       {/* Period Selector */}
@@ -772,7 +805,7 @@ const FinanceManagement: React.FC = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveView(tab.id as ViewType)}
+                  onClick={() => handleTabChange(tab.id as ViewType)}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                     activeView === tab.id
                       ? 'border-green-600 text-green-600'

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus, Search, Edit, Trash2, X, Filter,
   DollarSign, TrendingUp, Tag, Calendar,
@@ -77,6 +78,8 @@ interface IncomeStats {
 
 
 const IncomeManagement: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showError, showSuccess } = useToast();
   const { confirm, dialogProps } = useConfirmDialog();
   const { startAction, endAction } = useActionProgress();
@@ -185,16 +188,102 @@ const IncomeManagement: React.FC = () => {
   };
 
   // ---- Entry handlers ----
-  const openEntryModal = (mode: 'create' | 'edit' | 'view', entry?: ManualTransaction) => {
+  const openEntryModal = (mode: 'create' | 'edit' | 'view', entry?: ManualTransaction, shouldNavigate = true) => {
     setEntryModalMode(mode);
     setSelectedEntry(entry || null);
     setShowEntryModal(true);
+    if (shouldNavigate) {
+      if (mode === 'create') {
+        if (location.pathname !== '/crm/income/new') {
+          navigate('/crm/income/new');
+        }
+      } else if (entry) {
+        const target = mode === 'edit' ? `/crm/income/${entry.id}/edit` : `/crm/income/${entry.id}`;
+        if (location.pathname !== target) {
+          navigate(target);
+        }
+      }
+    }
   };
 
   const closeEntryModal = () => {
     setShowEntryModal(false);
     setSelectedEntry(null);
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+    if (cleanPath !== '/crm/income' && cleanPath !== '/crm/income/categories') {
+      navigate('/crm/income');
+    }
   };
+
+  const loadEntryByIdAndOpen = useCallback(async (id: string, mode: 'view' | 'edit') => {
+    const found = entries.find(e => e.id === id);
+    if (found) {
+      openEntryModal(mode, found, false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const fetched = await financeService.getTransactionById(id);
+      if (fetched) {
+        openEntryModal(mode, fetched, false);
+      } else {
+        showError('Income entry not found');
+        navigate('/crm/income', { replace: true });
+      }
+    } catch (err) {
+      console.error('Failed to load transaction:', err);
+      showError('Failed to load income entry');
+      navigate('/crm/income', { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  }, [entries, navigate]);
+
+  // Route synchronization for Add, View, and Edit income models and tabs
+  useEffect(() => {
+    const cleanPath = location.pathname.replace(/^\/admin/, '/crm');
+
+    if (cleanPath === '/crm/income/new' || cleanPath === '/crm/income/add') {
+      if (!showEntryModal || entryModalMode !== 'create') {
+        openEntryModal('create', undefined, false);
+      }
+      return;
+    }
+
+    const editMatch = cleanPath.match(/^\/crm\/income\/([^/]+)\/edit$/) ||
+                      cleanPath.match(/^\/crm\/income\/edit\/([^/]+)$/);
+    if (editMatch) {
+      const id = editMatch[1];
+      if (id !== 'new' && id !== 'add') {
+        if (!showEntryModal || entryModalMode !== 'edit' || selectedEntry?.id !== id) {
+          loadEntryByIdAndOpen(id, 'edit');
+        }
+        return;
+      }
+    }
+
+    const viewMatch = cleanPath.match(/^\/crm\/income\/(?:view\/)?([^/]+)$/);
+    if (viewMatch) {
+      const id = viewMatch[1];
+      if (id !== 'new' && id !== 'add' && id !== 'categories') {
+        if (!showEntryModal || entryModalMode !== 'view' || selectedEntry?.id !== id) {
+          loadEntryByIdAndOpen(id, 'view');
+        }
+        return;
+      }
+    }
+
+    if (showEntryModal) {
+      setShowEntryModal(false);
+      setSelectedEntry(null);
+    }
+
+    if (cleanPath === '/crm/income/categories') {
+      if (activeTab !== 'categories') setActiveTab('categories');
+    } else if (cleanPath === '/crm/income') {
+      if (activeTab !== 'income') setActiveTab('income');
+    }
+  }, [location.pathname, entries, loadEntryByIdAndOpen]);
 
   const handleSaveEntry = async (data: CreateTransactionData) => {
     try {
@@ -399,7 +488,10 @@ const IncomeManagement: React.FC = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    navigate(tab.id === 'income' ? '/crm/income' : '/crm/income/categories');
+                  }}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-green-600 text-green-600'

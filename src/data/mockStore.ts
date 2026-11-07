@@ -88,8 +88,33 @@ class MockStore {
         if (parsed.version === 2) {
           if (!parsed.terms_templates || !parsed.terms_templates.length) {
             parsed.terms_templates = JSON.parse(JSON.stringify(mockTermsTemplates));
-            this.saveState(parsed);
           }
+          // Backfill any newly added invoices, customers, expenses, or countries
+          const existingInvIds = new Set((parsed.invoices || []).map((i: any) => i.id));
+          for (const inv of mockInvoices) {
+            if (!existingInvIds.has(inv.id)) {
+              parsed.invoices.push(JSON.parse(JSON.stringify(inv)));
+            }
+          }
+          const existingCustIds = new Set((parsed.customers || []).map((c: any) => c.id));
+          for (const cust of mockCustomers) {
+            if (!existingCustIds.has(cust.id)) {
+              parsed.customers.push(JSON.parse(JSON.stringify(cust)));
+            }
+          }
+          const existingExpIds = new Set((parsed.expenses || []).map((e: any) => e.id));
+          for (const exp of mockExpenses) {
+            if (!existingExpIds.has(exp.id)) {
+              parsed.expenses.push(JSON.parse(JSON.stringify(exp)));
+            }
+          }
+          const existingCountryIds = new Set((parsed.countries || []).map((c: any) => c.id));
+          for (const country of mockCountries) {
+            if (!existingCountryIds.has(country.id)) {
+              parsed.countries.push(JSON.parse(JSON.stringify(country)));
+            }
+          }
+          this.saveState(parsed);
           return parsed;
         }
       }

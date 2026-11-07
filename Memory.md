@@ -146,3 +146,26 @@ To prevent client corruption during rapid iterative prototyping or client demons
 - **RBAC Role Management**: Integrated directly at `src/components/admin/roles/` mirroring the granular permission matrix from `kdadks` (`RoleListTab`, `RoleAccessMatrixTab`, `UserAssignmentsTab`, `RoleAuditLogTab`, `RoleModal`, `UserAssignmentModal`). Accessible via `/crm/roles`.
 - **Terms Templates Offline Memory**: Default Ireland & EU B2B terms stored in `terms_templates` key in `template_crm_data_v2`, guaranteeing seamless invoice creation when Supabase is disconnected.
 
+---
+
+## 7. Automated Multi-Jurisdiction Tax & Compliance Reporting Engine
+
+- **Jurisdiction Detection**: Automatically infers entity tax regime based on active company (`comp-irl-002` $\rightarrow$ Irish VAT3, `comp-ind-001` $\rightarrow$ Indian GST).
+- **Irish & EU VAT3 Engine** (`TaxReportingService.generateIrishVAT3Report`):
+  - **T1**: VAT on domestic Irish sales (23% standard / 13.5% reduced).
+  - **T2**: Input VAT deductible on qualifying operational expenses and purchases.
+  - **T3 / T4**: Net VAT payable to Revenue Commissioners or refundable.
+  - **E1 & ES1**: Net value of intra-EU B2B supplies to VAT-registered clients under Reverse Charge (0%).
+  - **E2 & ES2**: Intra-EU acquisitions of goods/services under self-accounting reverse charge.
+  - **VIES Dispatches**: Schedule of European B2B customers, member state codes, and EU VAT IDs.
+  - **Export Formats**: ROS (Revenue Online Service) compliant JSON and Accountant Audit CSV.
+- **Indian GST Engine** (`TaxReportingService.generateIndianGSTReport`):
+  - **GSTR-3B Table 3.1**: Outward taxable supplies categorized into Intra-State (CGST 9% + SGST 9%), Inter-State (IGST 18% / CST), and Zero-Rated Exports (LUT 0%).
+  - **GSTR-3B Table 4**: Eligible Input Tax Credit (ITC) from inward vendor expenses.
+  - **GSTR-3B Table 5.1**: Statutory ITC cross-utilization matrix and net cash tax payable.
+  - **GSTR-1 Summary**: B2B (with GSTIN), B2C Large (> ₹2.5 Lakhs inter-state), B2C Small, Exports Table 6A.
+  - **Table 12 HSN/SAC Summary**: IT Consulting (SAC 998313).
+  - **Export Formats**: GSTN Offline Tool compliant JSON and Accountant Audit CSV.
+- **Route & Access**: Located under Finance & Costs at `/crm/tax-reports` (and `/admin/tax-reports`). Accessible directly from Executive Dashboard and Finance P&L header.
+
+
